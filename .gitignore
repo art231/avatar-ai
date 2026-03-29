@@ -133,3 +133,5 @@ secrets.yaml
 .Trashes
 ehthumbs.db
 [Tt]humbs.db
+/backend/nul
+/nul
