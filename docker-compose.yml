@@ -1,0 +1,179 @@
+version: '3.8'
+
+services:
+  # База данных
+  postgres:
+    image: postgres:15-alpine
+    container_name: avatar-ai-postgres
+    environment:
+      POSTGRES_DB: avatarai
+      POSTGRES_USER: avatarai
+      POSTGRES_PASSWORD: avatarai123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - avatar-ai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U avatarai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis для очередей и кэша
+  redis:
+    image: redis:7-alpine
+    container_name: avatar-ai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - avatar-ai-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Бэкенд .NET 8 API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: avatar-ai-backend
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=avatarai;Username=avatarai;Password=avatarai123
+      - Redis__ConnectionString=redis:6379
+      - AI_SERVICES__AUDIO_PREPROCESSOR_URL=http://audio-preprocessor:5004
+      - AI_SERVICES__XTTS_SERVICE_URL=http://xtts-service:5003
+      - AI_SERVICES__MEDIA_ANALYZER_URL=http://media-analyzer:5005
+      - AI_SERVICES__LIPSYNC_SERVICE_URL=http://lipsync-service:5006
+    volumes:
+      - ./data:/app/data
+    networks:
+      - avatar-ai-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Фронтенд Angular
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: avatar-ai-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - API_URL=http://backend:8080
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - avatar-ai-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # AI сервисы (будут добавлены позже)
+  audio-preprocessor:
+    build:
+      context: ./ai-services/audio-preprocessor
+      dockerfile: Dockerfile
+    container_name: avatar-ai-audio-preprocessor
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./data:/data
+    networks:
+      - avatar-ai-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  xtts-service:
+    build:
+      context: ./ai-services/xtts-service
+      dockerfile: Dockerfile
+    container_name: avatar-ai-xtts-service
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./data:/data
+      - ./ai-services/xtts-service/models:/app/models
+    networks:
+      - avatar-ai-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  media-analyzer:
+    build:
+      context: ./ai-services/media-analyzer
+      dockerfile: Dockerfile
+    container_name: avatar-ai-media-analyzer
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./data:/data
+    networks:
+      - avatar-ai-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  lipsync-service:
+    build:
+      context: ./ai-services/lipsync-service
+      dockerfile: Dockerfile
+    container_name: avatar-ai-lipsync-service
+    ports:
+      - "5006:5006"
+    volumes:
+      - ./data:/data
+      - ./ai-services/lipsync-service/models:/app/models
+    networks:
+      - avatar-ai-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  avatar-ai-network:
+    driver: bridge

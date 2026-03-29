@@ -1,0 +1,135 @@
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.csproj.user
+*.vs/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Angular
+node_modules/
+dist/
+.cache/
+.angular/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+.installed.cfg
+*.egg
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+.python-version
+
+# AI Models
+**/models/
+**/checkpoints/
+**/weights/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+
+# Data
+data/
+uploads/
+temp/
+tmp/
+*.mp4
+*.wav
+*.mp3
+*.jpg
+*.png
+*.jpeg
+
+# Docker
+*.log
+*.pid
+*.seed
+*.pid.lock
+docker-compose.override.yml
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+build/
+out/
+release/
+*.tsbuildinfo
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Misc
+*.tgz
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+.sass-cache/
+.parcel-cache/
+
+# Secrets
+secrets.yml
+secrets.yaml
+*.pem
+*.key
+*.crt
+
+# OS generated files
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+[Tt]humbs.db

@@ -1,0 +1,22 @@
+# TTS and ML
+TTS==0.21.0
+torch==2.1.0
+torchaudio==2.1.0
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Audio processing
+librosa>=0.10.0
+soundfile==0.12.1
+numpy>=1.20.3
+scipy==1.11.4
+
+# Utilities
+pydantic==2.5.0
+pydantic-settings==2.1.0
+httpx==0.25.1
+loguru==0.7.2
+python-dotenv==1.0.0
