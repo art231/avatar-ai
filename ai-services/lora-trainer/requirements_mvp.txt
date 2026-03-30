@@ -1,0 +1,28 @@
+# Simplified requirements for MVP - LoRA trainer is not critical for MVP
+# We'll use a mock implementation for now
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Basic ML dependencies (lightweight)
+torch==2.1.1
+torchvision==0.16.1
+numpy==1.24.4
+Pillow==10.1.0
+
+# Utilities
+pydantic==2.5.0
+loguru==0.7.2
+aiofiles==23.2.1
+httpx==0.25.1
+redis==5.0.1
+python-dotenv==1.0.0
+
+# Image processing (basic)
+opencv-python==4.9.0.80
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1

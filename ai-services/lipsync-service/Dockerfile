@@ -18,6 +18,15 @@ RUN apt-get update && \
     libglib2.0-0 \
     git \
     curl \
+    build-essential \
+    cmake \
+    g++ \
+    gcc \
+    wget \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1-mesa-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment

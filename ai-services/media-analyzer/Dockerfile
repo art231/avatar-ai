@@ -17,6 +17,16 @@ RUN apt-get update && \
     libgl1-mesa-glx \
     libglib2.0-0 \
     curl \
+    build-essential \
+    cmake \
+    g++ \
+    gcc \
+    git \
+    wget \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgl1-mesa-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment

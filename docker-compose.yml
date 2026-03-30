@@ -170,6 +170,159 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
 
+  # LoRA Trainer для обучения персональных моделей аватаров
+  lora-trainer:
+    build:
+      context: ./ai-services/lora-trainer
+      dockerfile: Dockerfile
+    container_name: avatar-ai-lora-trainer
+    ports:
+      - "8188:8188"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATA_DIR=/data
+      - MODELS_DIR=/app/models
+      - OUTPUT_DIR=/data/output/lora
+      - INPUT_DIR=/data/input/lora
+      - BASE_MODEL=runwayml/stable-diffusion-v1-5
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - USE_GPU=true
+    volumes:
+      - ./data:/data
+      - ./ai-services/lora-trainer/models:/app/models
+    networks:
+      - avatar-ai-network
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # Motion Generator для генерации анимации движений
+  motion-generator:
+    build:
+      context: ./ai-services/motion-generator
+      dockerfile: Dockerfile
+    container_name: avatar-ai-motion-generator
+    ports:
+      - "5002:5002"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATA_DIR=/data
+      - MODELS_DIR=/app/models
+      - OUTPUT_DIR=/data/output/motion
+      - INPUT_DIR=/data/input/motion
+      - MOTION_MODEL=unimotion
+      - POSE_ESTIMATION_MODEL=dwpose
+      - SMPL_MODEL_PATH=/app/models/smpl
+      - DEFAULT_DURATION_SEC=10
+      - FPS=24
+      - RESOLUTION_WIDTH=512
+      - RESOLUTION_HEIGHT=512
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - USE_GPU=true
+    volumes:
+      - ./data:/data
+      - ./ai-services/motion-generator/models:/app/models
+    networks:
+      - avatar-ai-network
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # Video Renderer для финального рендеринга видео
+  video-renderer:
+    build:
+      context: ./ai-services/video-renderer
+      dockerfile: Dockerfile
+    container_name: avatar-ai-video-renderer
+    ports:
+      - "5008:5008"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATA_DIR=/data
+      - MODELS_DIR=/app/models
+      - OUTPUT_DIR=/data/output/video
+      - INPUT_DIR=/data/input/video
+      - BASE_MODEL=runwayml/stable-diffusion-v1-5
+      - VIDEO_MODEL=wan2.1
+      - CONTROLNET_MODEL=lllyasviel/sd-controlnet-openpose
+      - UPSCALER_MODEL=RealESRGAN_x4plus
+      - FPS=24
+      - RESOLUTION_WIDTH=512
+      - RESOLUTION_HEIGHT=512
+      - NUM_FRAMES=240
+      - GUIDANCE_SCALE=7.5
+      - NUM_INFERENCE_STEPS=50
+      - CONTROLNET_CONDITIONING_SCALE=0.8
+      - UPSCALE_FACTOR=2
+      - COMFYUI_HOST=lora-trainer
+      - COMFYUI_PORT=8188
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - USE_GPU=true
+    volumes:
+      - ./data:/data
+      - ./ai-services/video-renderer/models:/app/models
+      - ./ai-services/video-renderer/workflows:/app/workflows
+    networks:
+      - avatar-ai-network
+    depends_on:
+      - redis
+      - lora-trainer
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # Training Pipeline для оркестрации обучения моделей
+  training-pipeline:
+    build:
+      context: ./ai-services/training-pipeline
+      dockerfile: Dockerfile
+    container_name: avatar-ai-training-pipeline
+    ports:
+      - "5007:5007"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DATA_DIR=/data
+      - LOG_LEVEL=INFO
+      - DEBUG=true
+    volumes:
+      - ./data:/data
+    networks:
+      - avatar-ai-network
+    depends_on:
+      - redis
+      - audio-preprocessor
+      - media-analyzer
+      - xtts-service
+      - lora-trainer
+      - lipsync-service
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

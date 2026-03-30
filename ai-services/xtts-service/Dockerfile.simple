@@ -1,0 +1,37 @@
+# Упрощенный Dockerfile для тестового режима XTTS сервиса
+FROM python:3.11-slim
+
+# Установка системных зависимостей
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ffmpeg \
+    libsndfile1 \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создание рабочей директории
+WORKDIR /app
+
+# Копирование requirements и установка зависимостей
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копирование исходного кода
+COPY . .
+
+# Создание директорий
+RUN mkdir -p /data/input /data/output /app/logs
+
+# Установка переменных окружения для симуляции
+ENV SIMULATE_TTS=true
+ENV REDIS_HOST=redis
+ENV REDIS_PORT=6379
+ENV OUTPUT_DIR=/data/output
+ENV INPUT_DIR=/data/input
+
+# Открытие порта
+EXPOSE 5003
+
+# Запуск приложения
+CMD ["python", "main.py"]

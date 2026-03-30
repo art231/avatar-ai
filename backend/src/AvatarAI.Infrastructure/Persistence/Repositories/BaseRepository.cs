@@ -48,4 +48,9 @@ public class BaseRepository<T> : IRepository<T> where T : class
         var entity = await GetByIdAsync(id, cancellationToken);
         return entity != null;
     }
+
+    public virtual async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.SaveChangesAsync(cancellationToken);
+    }
 }

@@ -1,0 +1,48 @@
+# Video rendering and diffusion models (compatible with Python 3.10)
+torch==2.1.0
+torchvision==0.16.0
+torchaudio==2.1.0
+transformers==4.36.2
+diffusers==0.25.0
+accelerate==0.26.0
+xformers==0.0.23
+safetensors==0.4.2
+
+# Video processing and image manipulation
+opencv-python==4.9.0.80
+numpy==1.24.4
+scipy==1.11.4
+Pillow==10.1.0
+imageio==2.33.1
+imageio-ffmpeg==0.4.9
+moviepy==1.0.3
+
+# ControlNet and pose conditioning
+controlnet-aux==0.0.7
+mediapipe==0.10.10  # Last version compatible with Python 3.10
+
+# ComfyUI integration - use direct HTTP API instead of client library
+# comfyui-client is not available on PyPI, using custom implementation
+websockets==12.0
+
+# Upscaling and enhancement
+realesrgan==0.3.0
+gfpgan==1.3.8
+
+# Web framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Utilities
+pydantic==2.5.0
+loguru==0.7.2
+aiofiles==23.2.1
+httpx==0.25.1
+redis==5.0.1
+python-dotenv==1.0.0
+msgpack==1.0.7
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1

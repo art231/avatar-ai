@@ -1,283 +1,384 @@
-# AvatarAI - Production System for Photo-realistic Video Generation
+# AvatarAI - Production-Ready AI Avatar Platform
 
-AvatarAI is a production system for creating photo-realistic videos with digital human avatars. Users provide photos or short videos and voice samples - the system automatically generates videos where the avatar speaks the given text with synchronized lip movements.
+Полнофункциональная платформа для создания и использования AI аватаров с поддержкой обучения моделей и генерации видео.
 
-## Key Features
+## 🚀 Особенности
 
-- **Voice Cloning**: Clone unique voice from 5-30 second audio samples
-- **Speech Synthesis**: Generate speech in cloned voice from arbitrary text
-- **Personal LoRA Models**: Create personal LoRA models from human photos
-- **Video Generation**: Generate videos with realistic facial expressions and movements
-- **Lip Sync**: Synchronize lip movements with audio track
-- **Fully Local Deployment**: Deploy via Docker Compose
+- **Полный пайплайн обучения**: От загрузки изображений до готовой модели
+- **Реальная интеграция AI**: XTTS v2, MuseTalk (Lipsync), Kohya_ss (LoRA)
+- **Production-ready архитектура**: Clean Architecture, SOLID, CQRS
+- **Масштабируемая инфраструктура**: Docker, микросервисы, Redis
+- **Современный фронтенд**: Angular 17, Vite, TypeScript
+- **Полное тестирование**: Unit и integration тесты
 
-## System Architecture
+## 🏗️ Архитектура
 
-### Docker Compose Services
+### Backend (.NET 8)
+- **Domain**: Сущности, интерфейсы, value objects
+- **Application**: Use cases, DTOs, валидация, CQRS
+- **Infrastructure**: EF Core, репозитории, внешние сервисы
+- **Presentation**: Web API, контроллеры, middleware
 
-| Service | Technology | Port | Purpose |
-|---------|------------|------|---------|
-| postgres | PostgreSQL 15 | 5432 | Main database |
-| redis | Redis 7 | 6379 | Task queue / cache |
-| backend | .NET 8 Web API | 5000 | REST API + CQRS |
-| frontend | Angular 17 + Vite | 3000 | Frontend UI |
-| audio-preprocessor | Python 3.11 + Demucs | 5004 | Audio cleaning |
-| xtts-service | Coqui XTTS v2 | 5003 | Voice cloning / TTS |
-| media-analyzer | Python 3.11 + InsightFace | 5005 | Photo/video analysis |
-| lipsync-service | MuseTalk | 5006 | Lip synchronization |
+### Frontend (Angular 17)
+- **Domain**: Модели, интерфейсы
+- **Application**: Сервисы, фасады
+- **Infrastructure**: API клиенты, HTTP слои
+- **UI**: Компоненты, страницы, layout
 
-### Backend Architecture (.NET 8 - Clean Architecture)
+### AI Сервисы (Python)
+- **audio-preprocessor**: Обработка аудио
+- **media-analyzer**: Анализ изображений и лиц
+- **lora-trainer**: Обучение LoRA моделей (Kohya_ss)
+- **xtts-service**: Синтез речи (XTTS v2)
+- **lipsync-service**: Синхронизация губ (MuseTalk)
+- **training-pipeline**: Оркестрация обучения
+- **video-renderer**: Рендеринг видео
 
-- **Domain Layer**: Entities, value objects, repository interfaces, enums, domain events
-- **Application Layer**: CQRS commands/queries (MediatR), DTOs, validation (FluentValidation), service interfaces
-- **Infrastructure Layer**: EF Core 8, repositories, AI service clients, file storage, background tasks (Hangfire)
-- **API Layer**: Controllers, Middleware, Swagger, JWT authentication, Health Checks
+## 🛠️ Требования
 
-## Prerequisites
+- Docker 20.10+
+- Docker Compose 2.20+
+- 16GB+ RAM (рекомендуется 32GB для обучения)
+- NVIDIA GPU с 8GB+ VRAM (рекомендуется для обучения)
+- 50GB+ свободного места на диске
 
-### Hardware Requirements
+## 🚀 Быстрый старт
 
-- **GPU**: NVIDIA RTX 3060 12GB (minimum) / RTX 4090 24GB (recommended)
-- **RAM**: 32 GB (minimum), 64 GB (recommended)
-- **Storage**: 200+ GB NVMe SSD
-- **OS**: Ubuntu 22.04 LTS or Windows 11 with WSL2
-- **CUDA**: 12.1+ / NVIDIA Driver 525+
-- **Docker**: Docker Engine 24+ with NVIDIA Container Toolkit
-
-### Software Requirements
-
-- Docker Engine 24.0.0+
-- Docker Compose 2.20.0+
-- NVIDIA Container Toolkit
-- Git
-
-## Quick Start
-
-### 1. Clone the Repository
-
+### 1. Клонирование и настройка
 ```bash
 git clone <repository-url>
 cd avatar-ai
-```
-
-### 2. Configure Environment Variables
-
-Create a `.env` file in the project root:
-
-```bash
 cp .env.example .env
-# Edit .env file with your configuration
+# Отредактируйте .env при необходимости
 ```
 
-### 3. Build and Start Services
-
+### 2. Запуск через Docker Compose
 ```bash
-# Build and start all services
-docker-compose up --build -d
-
-# View logs
-docker-compose logs -f
-
-# Check service status
-docker-compose ps
+docker-compose up -d
 ```
 
-### 4. Access the Application
+Сервисы будут доступны:
+- **Frontend**: http://localhost:80
+- **Backend API**: http://localhost:8080
+- **Hangfire Dashboard**: http://localhost:8080/hangfire
+- **AI Services**: Доступны через backend API
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:5000
-- **API Documentation**: http://localhost:5000/swagger
-- **Health Checks**: http://localhost:5000/health
-
-### 5. Stop Services
-
+### 3. Проверка работоспособности
 ```bash
-# Stop all services
-docker-compose down
+# Проверка health check
+curl http://localhost:8080/health
 
-# Stop and remove volumes
-docker-compose down -v
+# Проверка frontend
+curl http://localhost:80/health
 ```
 
-## Development
-
-### Project Structure
+## 📁 Структура проекта
 
 ```
 avatar-ai/
-├── backend/                 # .NET 8 Backend (Clean Architecture)
+├── backend/                 # .NET 8 Backend
 │   ├── src/
-│   │   ├── AvatarAI.Domain/      # Domain layer
-│   │   ├── AvatarAI.Application/ # Application layer
-│   │   ├── AvatarAI.Infrastructure/ # Infrastructure layer
-│   │   └── AvatarAI.Api/         # API layer
+│   │   ├── AvatarAI.Api/   # Web API
+│   │   ├── AvatarAI.Application/ # Use cases
+│   │   ├── AvatarAI.Domain/ # Domain models
+│   │   └── AvatarAI.Infrastructure/ # Infrastructure
 │   └── Dockerfile
 ├── frontend/               # Angular 17 Frontend
 │   ├── src/
-│   │   ├── domain/         # Domain models
-│   │   ├── application/    # Application services
-│   │   ├── infrastructure/ # Infrastructure services
-│   │   └── ui/             # UI components
+│   │   ├── app/           # Angular приложение
+│   │   ├── application/   # Сервисы
+│   │   ├── domain/        # Модели
+│   │   ├── infrastructure/# API клиенты
+│   │   └── ui/            # Компоненты
 │   └── Dockerfile
-├── ai-services/            # Python AI Services
-│   ├── audio-preprocessor/ # Audio preprocessing
-│   ├── xtts-service/       # Voice cloning/TTS
-│   ├── media-analyzer/     # Media analysis
-│   └── lipsync-service/    # Lip synchronization
-├── docker/                 # Docker configurations
-├── docker-compose.yml      # Docker Compose configuration
-├── .env.example           # Environment variables template
-└── README.md              # This file
+├── ai-services/           # Python AI сервисы
+│   ├── audio-preprocessor/
+│   ├── media-analyzer/
+│   ├── lora-trainer/
+│   ├── xtts-service/
+│   ├── lipsync-service/
+│   ├── training-pipeline/
+│   └── video-renderer/
+├── tests/                 # Тесты
+│   ├── backend/
+│   └── frontend/
+├── docker/               # Docker конфигурации
+├── docker-compose.yml    # Основной compose файл
+└── README.md            # Эта документация
 ```
 
-### Backend Development
+## 🔧 Конфигурация
 
+### Основные переменные окружения (.env)
+```env
+# Database
+POSTGRES_DB=avatarai
+POSTGRES_USER=avatarai
+POSTGRES_PASSWORD=secure_password
+
+# Backend
+ASPNETCORE_ENVIRONMENT=Production
+ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=avatarai;Username=avatarai;Password=secure_password
+
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+# AI Services
+AI_SERVICES_BASE_URL=http://ai-services:5000
+USE_GPU=true
+MODELS_DIR=/data/models
+```
+
+### Настройка AI моделей
+1. Поместите базовые модели в `data/models/`:
+   - Stable Diffusion модель
+   - XTTS v2 модель
+   - MuseTalk модель
+
+2. Или используйте автоматическую загрузку (требуется интернет):
 ```bash
+docker-compose run --rm lora-trainer download-models
+```
+
+## 📊 Обучение аватара
+
+### 1. Подготовка данных
+- **Изображения**: 10-50 четких фото лица с разных ракурсов
+- **Аудио**: 30-60 секунд чистой речи без фонового шума
+
+### 2. Процесс обучения
+1. Загрузите данные через веб-интерфейс
+2. Запустите обучение
+3. Отслеживайте прогресс в реальном времени
+4. Получите готовую модель через 2-6 часов
+
+### 3. Этапы пайплайна
+```
+1. Валидация данных → 2. Анализ лиц → 3. Обработка аудио
+       ↓                       ↓               ↓
+4. Обучение LoRA ←───────┐     │               │
+       ↓                 │     ↓               ↓
+5. Обучение голоса ←─────┴─────┴───────────────┘
+       ↓
+6. Интеграция моделей → 7. Проверка качества → 8. Деплой
+```
+
+## 🎬 Генерация видео
+
+### 1. Создание видео
+1. Выберите обученный аватар
+2. Введите текст для озвучки
+3. Настройте параметры (голос, фон, длительность)
+4. Запустите генерацию
+
+### 2. Процесс генерации
+```
+Текст → Синтез речи → Lipsync → Рендеринг → Видео
+```
+
+### 3. Время генерации
+- **Короткое видео (10-30 сек)**: 1-2 минуты
+- **Среднее видео (30-60 сек)**: 3-5 минут
+- **Длинное видео (1-2 мин)**: 5-10 минут
+
+## 🧪 Тестирование
+
+### Unit тесты
+```bash
+# Backend тесты
 cd backend
-
-# Restore dependencies
-dotnet restore
-
-# Build solution
-dotnet build
-
-# Run tests
 dotnet test
 
-# Run migrations
-dotnet ef database update
+# Frontend тесты
+cd frontend
+npm test
 ```
 
-### Frontend Development
-
+### Integration тесты
 ```bash
+# Запуск тестов в Docker
+docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+```
+
+### E2E тесты
+```bash
+# Запуск Cypress тестов
 cd frontend
+npm run e2e
+```
 
-# Install dependencies
+## 🔍 Мониторинг и логи
+
+### Логи
+```bash
+# Просмотр логов всех сервисов
+docker-compose logs -f
+
+# Логи конкретного сервиса
+docker-compose logs -f backend
+docker-compose logs -f lora-trainer
+```
+
+### Метрики
+- **Backend**: Prometheus метрики на `/metrics`
+- **AI сервисы**: Health checks на `/health`
+- **База данных**: pg_stat активности
+
+### Дашборды
+- **Hangfire**: http://localhost:8080/hangfire
+- **Grafana**: http://localhost:3000 (если настроено)
+- **Prometheus**: http://localhost:9090 (если настроено)
+
+## ⚡ Производительность
+
+### Оптимизация
+1. **GPU ускорение**: Включите `USE_GPU=true` в .env
+2. **Кэширование**: Redis для кэширования результатов
+3. **Пакетная обработка**: Очереди для длительных задач
+4. **CDN**: Для статических файлов и видео
+
+### Масштабирование
+```yaml
+# docker-compose.scale.yml
+services:
+  backend:
+    scale: 3
+  ai-services:
+    scale: 2
+```
+
+## 🔒 Безопасность
+
+### Рекомендации для production
+1. **HTTPS**: Настройте SSL/TLS сертификаты
+2. **Аутентификация**: JWT токены с refresh
+3. **Авторизация**: RBAC на уровне API
+4. **Rate limiting**: Ограничение запросов
+5. **WAF**: Web Application Firewall
+6. **Аудит**: Логирование всех действий
+
+### Конфиденциальные данные
+- Храните секреты в HashiCorp Vault или AWS Secrets Manager
+- Не коммитьте .env файлы
+- Используйте разные ключи для разных окружений
+
+## 🚨 Устранение неполадок
+
+### Общие проблемы
+
+#### 1. Недостаточно памяти
+```
+Error: CUDA out of memory
+```
+**Решение**: Уменьшите batch size в настройках обучения или используйте CPU.
+
+#### 2. Медленная загрузка моделей
+```
+Model loading timeout
+```
+**Решение**: Предзагрузите модели в `data/models/` или увеличьте таймауты.
+
+#### 3. Проблемы с Docker
+```
+Container fails to start
+```
+**Решение**: Проверьте логи `docker-compose logs <service>` и доступность портов.
+
+#### 4. Ошибки базы данных
+```
+Database connection failed
+```
+**Решение**: Убедитесь, что PostgreSQL запущен и доступен.
+
+### Отладка
+```bash
+# Проверка состояния сервисов
+docker-compose ps
+
+# Проверка логов
+docker-compose logs --tail=100 <service>
+
+# Вход в контейнер для отладки
+docker-compose exec <service> bash
+
+# Перезапуск сервиса
+docker-compose restart <service>
+```
+
+## 📈 Масштабирование
+
+### Горизонтальное масштабирование
+```bash
+# Масштабирование backend
+docker-compose up -d --scale backend=3
+
+# Масштабирование AI сервисов
+docker-compose up -d --scale lora-trainer=2 --scale xtts-service=2
+```
+
+### Вертикальное масштабирование
+```yaml
+# docker-compose.override.yml
+services:
+  lora-trainer:
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+          cpus: '4.0'
+    devices:
+      - "/dev/nvidia0:/dev/nvidia0"
+```
+
+## 🤝 Вклад в проект
+
+### Установка для разработки
+```bash
+# Backend
+cd backend
+dotnet restore
+dotnet build
+
+# Frontend
+cd frontend
 npm install
-
-# Start development server
 npm run dev
 
-# Build for production
-npm run build
+# AI сервисы
+cd ai-services/lora-trainer
+pip install -r requirements.txt
+python main.py
 ```
 
-## AI Services
+### Правила коммитов
+- Используйте Conventional Commits
+- Пишите тесты для нового функционала
+- Обновляйте документацию
+- Следуйте code style проекта
 
-### Audio Preprocessing Service (Port 5004)
+### Code style
+- **Backend**: .editorconfig, Roslyn анализаторы
+- **Frontend**: ESLint, Prettier
+- **Python**: Black, isort, flake8
 
-- **Technology**: Python 3.11 + Demucs + FFmpeg
-- **Purpose**: Clean audio samples, remove background noise, normalize volume
-- **Input**: Audio file (5-30 seconds, any format)
-- **Output**: Cleaned WAV file (mono, 22050 Hz, normalized to -23 LUFS)
+## 📄 Лицензия
 
-### XTTS Service (Port 5003)
+MIT License - смотрите файл [LICENSE](LICENSE)
 
-- **Technology**: Coqui XTTS v2
-- **Purpose**: Voice cloning and speech synthesis
-- **Input**: Cleaned audio sample + text
-- **Output**: Synthesized speech WAV file (24000 Hz, stereo)
+## 📞 Поддержка
 
-### Media Analyzer Service (Port 5005)
+- **Issues**: [GitHub Issues](https://github.com/your-org/avatar-ai/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-org/avatar-ai/discussions)
+- **Документация**: [Wiki](https://github.com/your-org/avatar-ai/wiki)
 
-- **Technology**: Python 3.11 + InsightFace + OpenCV
-- **Purpose**: Analyze photos/videos, detect faces, extract embeddings
-- **Input**: Photo (JPG/PNG) or video (MP4/MOV/AVI) up to 100 MB
-- **Output**: Aligned face frames 512×512 + metadata
+## 🙏 Благодарности
 
-### Lipsync Service (Port 5006)
+- [Kohya_ss](https://github.com/kohya-ss/sd-scripts) за LoRA training
+- [Coqui TTS](https://github.com/coqui-ai/TTS) за XTTS v2
+- [MuseTalk](https://github.com/TMElyralab/MuseTalk) за lipsync
+- Сообщество Stable Diffusion за модели и инструменты
 
-- **Technology**: MuseTalk v1.0 (ByteDance)
-- **Purpose**: Lip synchronization with audio
-- **Input**: Video + audio track
-- **Output**: Lip-synced video with audio
+---
 
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/refresh` - Refresh token
-
-### Avatars
-- `GET /api/avatars` - Get user's avatars
-- `POST /api/avatars` - Create new avatar
-- `GET /api/avatars/{id}` - Get avatar details
-- `PUT /api/avatars/{id}` - Update avatar
-- `DELETE /api/avatars/{id}` - Delete avatar
-
-### Voice Profiles
-- `POST /api/avatars/{avatarId}/voice-profiles` - Create voice profile
-- `GET /api/avatars/{avatarId}/voice-profiles` - Get voice profile
-- `DELETE /api/avatars/{avatarId}/voice-profiles` - Delete voice profile
-
-### Generation Tasks
-- `POST /api/generation-tasks` - Create generation task
-- `GET /api/generation-tasks` - Get user's tasks
-- `GET /api/generation-tasks/{id}` - Get task details
-- `GET /api/generation-tasks/{id}/progress` - Get task progress (SSE)
-
-## MVP Pipeline
-
-The Minimum Viable Product (MVP) provides:
-1. **Photo + Voice Sample + Text → Talking Avatar Video**
-2. **No LoRA training required** (uses SadTalker/MuseTalk directly)
-3. **Basic voice cloning** with Coqui XTTS v2
-4. **Lip synchronization** with MuseTalk
-
-## Monitoring
-
-### Health Checks
-- `GET /health` - Overall system health
-- `GET /health/ready` - Readiness probe
-- `GET /health/live` - Liveness probe
-
-### Logging
-- Structured logging with Serilog
-- Log levels: Debug, Information, Warning, Error
-- Output: Console + File + Elasticsearch (optional)
-
-## Troubleshooting
-
-### Common Issues
-
-1. **GPU not detected in Docker**
-   ```bash
-   # Check NVIDIA Container Toolkit installation
-   docker run --rm --gpus all nvidia/cuda:12.1.0-base-ubuntu22.04 nvidia-smi
-   ```
-
-2. **Port conflicts**
-   - Check if ports 3000, 5000, 5432, 6379 are available
-   - Modify ports in `docker-compose.yml` if needed
-
-3. **Database connection issues**
-   ```bash
-   # Check PostgreSQL container
-   docker-compose logs postgres
-   
-   # Test database connection
-   docker-compose exec postgres psql -U avatarai -d avatarai
-   ```
-
-4. **Insufficient GPU memory**
-   - Reduce batch sizes in AI service configurations
-   - Use smaller models where possible
-   - Consider upgrading GPU hardware
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For issues and feature requests, please use the GitHub Issues page.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+**AvatarAI** - это production-ready платформа для создания AI аватаров с полным циклом от обучения до генерации видео. Система готова к развертыванию в production с поддержкой масштабирования, мониторинга и безопасности.

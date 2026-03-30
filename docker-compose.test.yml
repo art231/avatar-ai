@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  # База данных
+  postgres:
+    image: postgres:15-alpine
+    container_name: avatar-ai-postgres-test
+    environment:
+      POSTGRES_DB: avatarai
+      POSTGRES_USER: avatarai
+      POSTGRES_PASSWORD: avatarai123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_test:/var/lib/postgresql/data
+    networks:
+      - avatar-ai-network-test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U avatarai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis для очередей и кэша
+  redis:
+    image: redis:7-alpine
+    container_name: avatar-ai-redis-test
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_test:/data
+    networks:
+      - avatar-ai-network-test
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Бэкенд .NET 8 API (упрощенный, без зависимостей от AI сервисов)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: avatar-ai-backend-test
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=avatarai;Username=avatarai;Password=avatarai123
+      - Redis__ConnectionString=redis:6379
+      - AI_SERVICES__AUDIO_PREPROCESSOR_URL=http://audio-preprocessor:5004
+      - AI_SERVICES__XTTS_SERVICE_URL=http://xtts-service:5003
+      - AI_SERVICES__MEDIA_ANALYZER_URL=http://media-analyzer:5005
+      - AI_SERVICES__LIPSYNC_SERVICE_URL=http://lipsync-service:5006
+      - SIMULATE_AI_SERVICES=true  # Важное изменение: симуляция AI сервисов
+    volumes:
+      - ./data:/app/data
+    networks:
+      - avatar-ai-network-test
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Фронтенд Angular (статический)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - SIMULATE_API=true
+    container_name: avatar-ai-frontend-test
+    ports:
+      - "3000:80"
+    environment:
+      - API_URL=http://backend:8080
+    networks:
+      - avatar-ai-network-test
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Упрощенные AI сервисы (симуляция)
+  audio-preprocessor:
+    image: python:3.11-slim
+    container_name: avatar-ai-audio-preprocessor-test
+    ports:
+      - "5004:5004"
+    volumes:
+      - ./ai-services/audio-preprocessor:/app
+    working_dir: /app
+    command: >
+      sh -c "echo 'Starting audio preprocessor simulation' &&
+             python -c 'from http.server import HTTPServer, BaseHTTPRequestHandler; import json; class Handler(BaseHTTPRequestHandler):
+               def do_GET(self):
+                 self.send_response(200); self.send_header(\"Content-type\", \"application/json\"); self.end_headers()
+                 self.wfile.write(json.dumps({\"status\": \"simulated\", \"service\": \"audio-preprocessor\"}).encode())
+               def do_POST(self):
+                 self.send_response(200); self.send_header(\"Content-type\", \"application/json\"); self.end_headers()
+                 self.wfile.write(json.dumps({\"success\": True, \"output_path\": \"/data/simulated.wav\"}).encode())'"
+    networks:
+      - avatar-ai-network-test
+    restart: unless-stopped
+
+  xtts-service:
+    build:
+      context: ./ai-services/xtts-service
+      dockerfile: Dockerfile.simple
+    container_name: avatar-ai-xtts-service-test
+    ports:
+      - "5003:5003"
+    volumes:
+      - ./data:/data
+    environment:
+      - SIMULATE_TTS=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - avatar-ai-network-test
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  media-analyzer:
+    image: python:3.11-slim
+    container_name: avatar-ai-media-analyzer-test
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./data:/data
+      - ./ai-services/media-analyzer:/app
+    working_dir: /app
+    command: >
+      sh -c "pip install fastapi uvicorn pydantic loguru &&
+             echo 'Starting media analyzer simulation' &&
+             python -c 'import uvicorn; from fastapi import FastAPI; app = FastAPI()
+               @app.get(\"/health\")
+               def health(): return {\"status\": \"simulated\", \"service\": \"media-analyzer\"}
+               @app.post(\"/analyze\")
+               def analyze(): return {\"success\": True, \"faces\": [{\"quality_score\": 0.9}]}
+               uvicorn.run(app, host=\"0.0.0.0\", port=5005)'"
+    networks:
+      - avatar-ai-network-test
+    restart: unless-stopped
+
+  lipsync-service:
+    build:
+      context: ./ai-services/lipsync-service
+      dockerfile: Dockerfile.simple
+    container_name: avatar-ai-lipsync-service-test
+    ports:
+      - "5006:5006"
+    volumes:
+      - ./data:/data
+    environment:
+      - SIMULATE_LIPSYNC=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - avatar-ai-network-test
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+volumes:
+  postgres_data_test:
+  redis_data_test:
+
+networks:
+  avatar-ai-network-test:
+    driver: bridge
