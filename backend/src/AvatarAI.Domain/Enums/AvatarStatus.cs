@@ -6,5 +6,6 @@ public enum AvatarStatus
     Training = 1,
     Ready = 2,
     Failed = 3,
-    Active = 4
+    Active = 4,
+    Trained = 5
 }

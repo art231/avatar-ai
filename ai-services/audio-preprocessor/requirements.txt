@@ -4,9 +4,9 @@ uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 
 # Audio processing
-torch==2.1.1
-torchaudio==2.1.1
-torchvision==0.16.1
+torch==2.1.2
+torchaudio==2.1.2
+torchvision==0.16.2
 demucs==4.0.0
 librosa>=0.10.0
 pydub==0.25.1

@@ -40,13 +40,8 @@ RUN pip install --upgrade pip setuptools wheel ninja
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install additional audio processing libraries
-RUN pip install --no-cache-dir \
-    pyloudnorm \
-    pypesq \
-    pesq \
-    mir_eval \
-    resampy
+# No additional audio processing libraries needed
+# All required packages are in requirements.txt
 
 # Create app directory
 WORKDIR /app

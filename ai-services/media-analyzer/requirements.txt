@@ -5,9 +5,9 @@ mediapipe==0.10.11
 pillow==10.1.0
 
 # Deep Learning
-torch==2.1.1
-torchvision==0.16.1
-torchaudio==2.1.1
+torch==2.1.2
+torchvision==0.16.2
+torchaudio==2.1.2
 
 # Web framework
 fastapi==0.104.1

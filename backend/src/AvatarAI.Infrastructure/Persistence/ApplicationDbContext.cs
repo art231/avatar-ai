@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using AvatarAI.Domain.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using System.Text.Json;
 
 namespace AvatarAI.Infrastructure.Persistence;
 
@@ -13,7 +14,6 @@ public class ApplicationDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Avatar> Avatars { get; set; }
-    public DbSet<VoiceProfile> VoiceProfiles { get; set; }
     public DbSet<GenerationTask> GenerationTasks { get; set; }
     public DbSet<TaskLog> TaskLogs { get; set; }
 
@@ -45,6 +45,12 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
             entity.Property(e => e.Status).IsRequired().HasConversion<string>();
             entity.Property(e => e.LoraPath).HasMaxLength(500);
+            entity.Property(e => e.ModelPath).HasMaxLength(500);
+            entity.Property(e => e.VoiceProfile)
+                .HasConversion(new ValueConverter<Dictionary<string, object>?, string?>(
+                    v => v == null ? null : JsonSerializer.Serialize(v, JsonSerializerOptions.Default),
+                    v => string.IsNullOrEmpty(v) ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(v, JsonSerializerOptions.Default)
+                ));
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
             
@@ -56,31 +62,9 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             
-            entity.HasOne(e => e.VoiceProfile)
-                .WithOne(e => e.Avatar)
-                .HasForeignKey<VoiceProfile>(e => e.AvatarId)
-                .OnDelete(DeleteBehavior.Cascade);
-            
             entity.HasMany(e => e.GenerationTasks)
                 .WithOne(e => e.Avatar)
                 .HasForeignKey(e => e.AvatarId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // VoiceProfile configuration
-        modelBuilder.Entity<VoiceProfile>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.AudioSamplePath).IsRequired().HasMaxLength(500);
-            entity.Property(e => e.XttsModelPath).HasMaxLength(500);
-            entity.Property(e => e.CreatedAt).IsRequired();
-            entity.Property(e => e.UpdatedAt).IsRequired();
-            
-            entity.HasIndex(e => e.AvatarId).IsUnique();
-            
-            entity.HasOne(e => e.Avatar)
-                .WithOne(e => e.VoiceProfile)
-                .HasForeignKey<VoiceProfile>(e => e.AvatarId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

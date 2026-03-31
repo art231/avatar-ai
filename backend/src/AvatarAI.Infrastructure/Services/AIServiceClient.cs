@@ -240,6 +240,110 @@ public class AIServiceClient : IAIServiceClient
             return $"/data/output/lipsynced_{Guid.NewGuid()}.mp4";
         }, new Context("ApplyLipsync"), cancellationToken);
     }
+
+    public async Task<Dictionary<string, object>> AnalyzeImageAsync(string imagePath, CancellationToken cancellationToken = default)
+    {
+        return await _retryPolicy.ExecuteAsync(async (context, token) =>
+        {
+            _logger.LogInformation("Analyzing image: {ImagePath}", imagePath);
+            
+            // For MVP, simulate image analysis
+            await Task.Delay(100, token); // Simulate processing
+            
+            return new Dictionary<string, object>
+            {
+                ["image_path"] = imagePath,
+                ["face_detected"] = true,
+                ["quality_score"] = 0.85,
+                ["analysis_completed_at"] = DateTime.UtcNow
+            };
+        }, new Context("AnalyzeImage"), cancellationToken);
+    }
+
+    public async Task<Dictionary<string, object>> AnalyzeFaceAsync(string imagePath, CancellationToken cancellationToken = default)
+    {
+        return await _retryPolicy.ExecuteAsync(async (context, token) =>
+        {
+            _logger.LogInformation("Analyzing face in image: {ImagePath}", imagePath);
+            
+            // For MVP, simulate face analysis
+            await Task.Delay(100, token); // Simulate processing
+            
+            return new Dictionary<string, object>
+            {
+                ["image_path"] = imagePath,
+                ["landmarks"] = new List<float> { 0.1f, 0.2f, 0.3f },
+                ["embedding"] = new List<float>(512),
+                ["confidence"] = 0.92,
+                ["analysis_completed_at"] = DateTime.UtcNow
+            };
+        }, new Context("AnalyzeFace"), cancellationToken);
+    }
+
+    public async Task<Dictionary<string, object>> AnalyzeVoiceAsync(string audioPath, CancellationToken cancellationToken = default)
+    {
+        return await _retryPolicy.ExecuteAsync(async (context, token) =>
+        {
+            _logger.LogInformation("Analyzing voice: {AudioPath}", audioPath);
+            
+            // For MVP, simulate voice analysis
+            await Task.Delay(100, token); // Simulate processing
+            
+            return new Dictionary<string, object>
+            {
+                ["audio_path"] = audioPath,
+                ["embedding"] = new List<float>(256),
+                ["pitch"] = 120.5,
+                ["speech_rate"] = 150.2,
+                ["timbre"] = "neutral",
+                ["analysis_completed_at"] = DateTime.UtcNow
+            };
+        }, new Context("AnalyzeVoice"), cancellationToken);
+    }
+
+    public async Task<Dictionary<string, object>> TrainModelAsync(Dictionary<string, object> trainingConfig, CancellationToken cancellationToken = default)
+    {
+        return await _retryPolicy.ExecuteAsync(async (context, token) =>
+        {
+            _logger.LogInformation("Training model with config: {Config}", trainingConfig);
+            
+            // For MVP, simulate model training
+            await Task.Delay(500, token); // Simulate training
+            
+            return new Dictionary<string, object>
+            {
+                ["model_path"] = $"/data/models/{Guid.NewGuid()}.safetensors",
+                ["metrics"] = new Dictionary<string, object>
+                {
+                    ["loss"] = 0.05,
+                    ["accuracy"] = 0.95,
+                    ["training_time"] = 3600.5
+                },
+                ["training_completed_at"] = DateTime.UtcNow,
+                ["status"] = "success"
+            };
+        }, new Context("TrainModel"), cancellationToken);
+    }
+
+    public async Task<Dictionary<string, object>> GenerateAudioAsync(string text, string modelPath, CancellationToken cancellationToken = default)
+    {
+        return await _retryPolicy.ExecuteAsync(async (context, token) =>
+        {
+            _logger.LogInformation("Generating audio for text: {Text} using model: {ModelPath}", text, modelPath);
+            
+            // For MVP, simulate audio generation
+            await Task.Delay(300, token); // Simulate generation
+            
+            return new Dictionary<string, object>
+            {
+                ["audio_path"] = $"/data/output/generated_{Guid.NewGuid()}.wav",
+                ["text"] = text,
+                ["model_path"] = modelPath,
+                ["generation_completed_at"] = DateTime.UtcNow,
+                ["status"] = "success"
+            };
+        }, new Context("GenerateAudio"), cancellationToken);
+    }
     
     private async Task<bool> IsServiceAvailableAsync(string serviceUrl, CancellationToken cancellationToken)
     {

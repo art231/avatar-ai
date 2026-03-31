@@ -1,5 +1,5 @@
-# Use NVIDIA CUDA base image for GPU support
-FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+# Use NVIDIA CUDA base image for GPU support (updated to non-deprecated version)
+FROM nvidia/cuda:12.4.0-runtime-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -42,12 +42,8 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install additional dependencies for motion generation
-RUN pip install --no-cache-dir \
-    pydantic-settings \
-    && \
-    # Clean up
-    rm -rf /root/.cache/pip
+# Clean up pip cache
+RUN rm -rf /root/.cache/pip
 
 # Set working directory
 WORKDIR /app

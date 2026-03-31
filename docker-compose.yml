@@ -253,7 +253,7 @@ services:
       dockerfile: Dockerfile
     container_name: avatar-ai-video-renderer
     ports:
-      - "5008:5008"
+      - "5007:5007"
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -303,7 +303,7 @@ services:
       dockerfile: Dockerfile
     container_name: avatar-ai-training-pipeline
     ports:
-      - "5007:5007"
+      - "5009:5008"
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379

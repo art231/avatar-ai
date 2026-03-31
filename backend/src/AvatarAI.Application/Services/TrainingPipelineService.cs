@@ -50,23 +50,18 @@ namespace AvatarAI.Application.Services
                 _logger.LogInformation("Starting training pipeline for user {UserId}, avatar {AvatarId}", userId, avatarId);
 
                 // Create new generation task
-                var task = new GenerationTask
+                var metadata = new Dictionary<string, object>
                 {
-                    Id = Guid.NewGuid(),
-                    UserId = userId,
-                    AvatarId = avatarId,
-                    Status = TaskStatus.Pending,
-                    Stage = TaskStage.DataPreparation,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    Metadata = new Dictionary<string, object>
-                    {
-                        ["image_paths"] = imagePaths,
-                        ["voice_sample_path"] = voiceSamplePath,
-                        ["training_config"] = trainingConfig,
-                        ["total_stages"] = 5
-                    }
+                    ["image_paths"] = imagePaths,
+                    ["voice_sample_path"] = voiceSamplePath,
+                    ["training_config"] = trainingConfig,
+                    ["total_stages"] = 5
                 };
+                
+                var task = new GenerationTask(userId, avatarId, metadata);
+                task.UpdateStage(Domain.Enums.TaskStage.DataPreparation);
+                task.UpdateProgress(0m);
+                task.UpdateStatus(Domain.Enums.TaskStatus.Pending);
 
                 await _taskRepository.AddAsync(task, cancellationToken);
                 await _taskRepository.SaveChangesAsync(cancellationToken);
@@ -142,8 +137,13 @@ namespace AvatarAI.Application.Services
                 await LogTaskEventAsync(task.Id, "Starting data preparation", task.Stage, cancellationToken);
 
                 // Call audio preprocessor service
+                var voiceSamplePath = task.Metadata["voice_sample_path"]?.ToString();
+                if (string.IsNullOrEmpty(voiceSamplePath))
+                {
+                    throw new Exception("Voice sample path is not provided in task metadata");
+                }
                 var audioPreprocessorResult = await _aiServiceClient.PreprocessAudioAsync(
-                    task.Metadata["voice_sample_path"].ToString(),
+                    voiceSamplePath,
                     cancellationToken);
 
                 // Call media analyzer service for images
@@ -165,8 +165,8 @@ namespace AvatarAI.Application.Services
                 };
 
                 // Update task metadata
-                task.Metadata["prepared_data"] = preparedData;
-                task.Progress = 0.2m; // 20% complete
+                task.UpdateMetadata("prepared_data", preparedData);
+                task.UpdateProgress(0.2m); // 20% complete
                 await _taskRepository.UpdateAsync(task, cancellationToken);
                 await _taskRepository.SaveChangesAsync(cancellationToken);
 
@@ -196,8 +196,13 @@ namespace AvatarAI.Application.Services
                 foreach (var imageAnalysis in imageAnalyses)
                 {
                     // Call media analyzer service for detailed face analysis
+                    var imagePath = imageAnalysis["image_path"]?.ToString();
+                    if (string.IsNullOrEmpty(imagePath))
+                    {
+                        throw new Exception($"Image path not found in image analysis for task {task.Id}");
+                    }
                     var faceAnalysis = await _aiServiceClient.AnalyzeFaceAsync(
-                        imageAnalysis["image_path"].ToString(),
+                        imagePath,
                         cancellationToken);
 
                     faceAnalysisResults.Add(faceAnalysis);
@@ -214,7 +219,7 @@ namespace AvatarAI.Application.Services
 
                 // Update task metadata
                 task.Metadata["face_analysis"] = aggregatedAnalysis;
-                task.Progress = 0.4m; // 40% complete
+                task.UpdateProgress(0.4m); // 40% complete
                 await _taskRepository.UpdateAsync(task, cancellationToken);
                 await _taskRepository.SaveChangesAsync(cancellationToken);
 
@@ -239,8 +244,13 @@ namespace AvatarAI.Application.Services
                 var audioPreprocessed = (Dictionary<string, object>)preparedData["audio_preprocessed"];
 
                 // Call XTTS service for voice analysis
+                var processedAudioPath = audioPreprocessed["processed_audio_path"]?.ToString();
+                if (string.IsNullOrEmpty(processedAudioPath))
+                {
+                    throw new Exception($"Processed audio path not found in audio preprocessed data for task {task.Id}");
+                }
                 var voiceAnalysis = await _aiServiceClient.AnalyzeVoiceAsync(
-                    audioPreprocessed["processed_audio_path"].ToString(),
+                    processedAudioPath,
                     cancellationToken);
 
                 var voiceProfile = new Dictionary<string, object>
@@ -253,7 +263,7 @@ namespace AvatarAI.Application.Services
 
                 // Update task metadata
                 task.Metadata["voice_analysis"] = voiceProfile;
-                task.Progress = 0.6m; // 60% complete
+                task.UpdateProgress(0.6m); // 60% complete
                 await _taskRepository.UpdateAsync(task, cancellationToken);
                 await _taskRepository.SaveChangesAsync(cancellationToken);
 
@@ -302,7 +312,7 @@ namespace AvatarAI.Application.Services
 
                 // Update task metadata
                 task.Metadata["trained_model"] = trainedModel;
-                task.Progress = 0.8m; // 80% complete
+                task.UpdateProgress(0.8m); // 80% complete
                 await _taskRepository.UpdateAsync(task, cancellationToken);
                 await _taskRepository.SaveChangesAsync(cancellationToken);
 
@@ -343,7 +353,7 @@ namespace AvatarAI.Application.Services
 
                 // Update task metadata
                 task.Metadata["validation_result"] = validationResult;
-                task.Progress = 0.9m; // 90% complete
+                task.UpdateProgress(0.9m); // 90% complete
                 await _taskRepository.UpdateAsync(task, cancellationToken);
                 await _taskRepository.SaveChangesAsync(cancellationToken);
 
@@ -372,19 +382,23 @@ namespace AvatarAI.Application.Services
                     var trainedModel = (Dictionary<string, object>)task.Metadata["trained_model"];
                     var voiceAnalysis = (Dictionary<string, object>)task.Metadata["voice_analysis"];
 
-                    avatar.ModelPath = trainedModel["model_path"].ToString();
-                    avatar.VoiceProfile = voiceAnalysis;
-                    avatar.Status = AvatarStatus.Trained;
+                    var modelPath = trainedModel["model_path"]?.ToString();
+                    if (string.IsNullOrEmpty(modelPath))
+                    {
+                        throw new Exception($"Model path not found in trained model for task {task.Id}");
+                    }
+                    avatar.SetModelPath(modelPath);
+                    avatar.SetVoiceProfile(voiceAnalysis);
+                    avatar.UpdateStatus(AvatarStatus.Trained);
                     avatar.UpdatedAt = DateTime.UtcNow;
 
                     await _avatarRepository.UpdateAsync(avatar, cancellationToken);
                 }
 
                 // Update task status
-                task.Status = TaskStatus.Completed;
-                task.Stage = TaskStage.Completed;
-                task.Progress = 1.0m;
-                task.CompletedAt = DateTime.UtcNow;
+                task.UpdateStatus(Domain.Enums.TaskStatus.Completed);
+                task.UpdateStage(TaskStage.Completed);
+                task.UpdateProgress(1.0m);
                 task.UpdatedAt = DateTime.UtcNow;
 
                 task.Metadata["completed_at"] = DateTime.UtcNow;
@@ -407,9 +421,8 @@ namespace AvatarAI.Application.Services
         {
             try
             {
-                task.Status = TaskStatus.Failed;
-                task.ErrorMessage = errorMessage;
-                task.CompletedAt = DateTime.UtcNow;
+                task.UpdateStatus(Domain.Enums.TaskStatus.Failed);
+                task.UpdateErrorMessage(errorMessage);
                 task.UpdatedAt = DateTime.UtcNow;
 
                 await _taskRepository.UpdateAsync(task, cancellationToken);
@@ -429,7 +442,7 @@ namespace AvatarAI.Application.Services
             string stageDescription,
             CancellationToken cancellationToken)
         {
-            task.Stage = stage;
+            task.UpdateStage(stage);
             task.UpdatedAt = DateTime.UtcNow;
 
             await _taskRepository.UpdateAsync(task, cancellationToken);
@@ -444,14 +457,7 @@ namespace AvatarAI.Application.Services
             TaskStage stage,
             CancellationToken cancellationToken)
         {
-            var taskLog = new TaskLog
-            {
-                Id = Guid.NewGuid(),
-                TaskId = taskId,
-                Stage = stage,
-                Message = message,
-                CreatedAt = DateTime.UtcNow
-            };
+            var taskLog = new TaskLog(taskId, stage, message);
 
             await _taskLogRepository.AddAsync(taskLog, cancellationToken);
             await _taskLogRepository.SaveChangesAsync(cancellationToken);
@@ -502,4 +508,55 @@ namespace AvatarAI.Application.Services
             {
                 "Hello, this is a test of the trained voice model.",
                 "How are you doing today?",
-                "The
+                "The weather is nice today."
+            };
+
+            var testSamples = new List<Dictionary<string, object>>();
+
+            foreach (var text in testTexts)
+            {
+                var sample = await _aiServiceClient.GenerateAudioAsync(
+                    text,
+                    trainedModel["model_path"].ToString(),
+                    cancellationToken);
+
+                testSamples.Add(new Dictionary<string, object>
+                {
+                    ["text"] = text,
+                    ["audio_path"] = sample.GetValueOrDefault("audio_path", ""),
+                    ["generated_at"] = DateTime.UtcNow
+                });
+            }
+
+            return testSamples;
+        }
+
+        private async Task<Dictionary<string, object>> ValidateSamplesAsync(
+            List<Dictionary<string, object>> testSamples,
+            CancellationToken cancellationToken)
+        {
+            // Simple validation - check if audio files were generated
+            var validationResults = new Dictionary<string, object>
+            {
+                ["total_samples"] = testSamples.Count,
+                ["valid_samples"] = testSamples.Count(s => !string.IsNullOrEmpty(s["audio_path"].ToString())),
+                ["validation_passed"] = testSamples.All(s => !string.IsNullOrEmpty(s["audio_path"].ToString())),
+                ["validated_at"] = DateTime.UtcNow
+            };
+
+            return validationResults;
+        }
+
+        private double CalculateOverallQuality(Dictionary<string, object> validationResults)
+        {
+            var totalSamples = Convert.ToInt32(validationResults["total_samples"]);
+            var validSamples = Convert.ToInt32(validationResults["valid_samples"]);
+
+            if (totalSamples == 0)
+                return 0.0;
+
+            return (double)validSamples / totalSamples;
+        }
+        #endregion
+    }
+}

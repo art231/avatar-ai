@@ -1,11 +1,11 @@
 # Motion generation and pose estimation
-torch==2.1.0
-torchvision==0.16.0
-torchaudio==2.1.0
+torch==2.1.2
+torchvision==0.16.2
+torchaudio==2.1.2
 transformers==4.36.2
 diffusers==0.25.0
 accelerate==0.26.0
-xformers==0.0.23
+xformers==0.0.23.post1
 safetensors==0.4.2
 
 # Pose estimation and motion processing
@@ -34,6 +34,7 @@ python-multipart==0.0.6
 
 # Utilities
 pydantic==2.5.0
+pydantic-settings==2.1.0
 loguru==0.7.2
 aiofiles==23.2.1
 httpx==0.25.1

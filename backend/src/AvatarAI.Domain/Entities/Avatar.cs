@@ -8,10 +8,11 @@ public class Avatar : BaseEntity
     public string Name { get; private set; }
     public AvatarStatus Status { get; private set; }
     public string? LoraPath { get; private set; }
+    public string? ModelPath { get; private set; }
+    public Dictionary<string, object>? VoiceProfile { get; private set; }
     
     // Navigation properties
     public virtual User User { get; private set; } = null!;
-    public virtual VoiceProfile? VoiceProfile { get; private set; }
     public virtual ICollection<GenerationTask> GenerationTasks { get; private set; } = new List<GenerationTask>();
 
     private Avatar() 
@@ -55,8 +56,32 @@ public class Avatar : BaseEntity
         UpdateTimestamps();
     }
 
+    public void SetModelPath(string modelPath)
+    {
+        ModelPath = modelPath ?? throw new ArgumentNullException(nameof(modelPath));
+        UpdateTimestamps();
+    }
+
+    public void ClearModelPath()
+    {
+        ModelPath = null;
+        UpdateTimestamps();
+    }
+
+    public void SetVoiceProfile(Dictionary<string, object> voiceProfile)
+    {
+        VoiceProfile = voiceProfile ?? throw new ArgumentNullException(nameof(voiceProfile));
+        UpdateTimestamps();
+    }
+
+    public void ClearVoiceProfile()
+    {
+        VoiceProfile = null;
+        UpdateTimestamps();
+    }
+
     public bool IsReadyForGeneration()
     {
-        return Status == AvatarStatus.Ready && VoiceProfile != null;
+        return Status == AvatarStatus.Ready && VoiceProfile != null && ModelPath != null;
     }
 }

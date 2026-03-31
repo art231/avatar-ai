@@ -1,7 +1,7 @@
 # Lip sync models (MuseTalk/Wav2Lip dependencies) - Python 3.10 compatible
-torch==2.1.1
-torchvision==0.16.1
-torchaudio==2.1.1
+torch==2.1.2
+torchvision==0.16.2
+torchaudio==2.1.2
 
 # MuseTalk specific dependencies
 # Note: MuseTalk (mmsync) is not available on PyPI, requires manual installation

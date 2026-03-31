@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AvatarAI.Application.Interfaces;
 using Hangfire;
 using Hangfire.States;
@@ -42,6 +43,11 @@ public class BackgroundJobService : IBackgroundJobService
     {
         return _backgroundJobClient.Enqueue(() => 
             _pipelineOrchestrator.TrainLoraAsync(avatarId, imagePaths.ToList()));
+    }
+
+    public string Enqueue(Expression<Func<Task>> task)
+    {
+        return _backgroundJobClient.Enqueue(task);
     }
 
     public bool CancelJob(string jobId)
