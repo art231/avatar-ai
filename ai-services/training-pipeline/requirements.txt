@@ -18,6 +18,7 @@ loguru==0.7.2
 # Utilities
 python-dotenv==1.0.0
 aiofiles==23.2.1
+setuptools==69.0.3  # Required for pkg_resources
 
 # Async
 asyncio==3.4.3

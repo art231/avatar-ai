@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from typing import List, Dict, Any
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):

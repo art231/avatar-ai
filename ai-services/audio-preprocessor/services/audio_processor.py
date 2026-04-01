@@ -2,6 +2,7 @@ import os
 import subprocess
 import tempfile
 import shutil
+import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 import numpy as np
@@ -55,7 +56,7 @@ class AudioProcessor:
         Returns:
             Dict with processing results and audio info
         """
-        processing_start = librosa.get_clock()
+        processing_start = time.time()
         
         try:
             # Step 1: Load and validate input audio
@@ -104,7 +105,7 @@ class AudioProcessor:
             
             # Step 10: Get final audio info
             final_duration = len(vocals) / sample_rate
-            processing_time = librosa.get_clock() - processing_start
+            processing_time = time.time() - processing_start
             
             audio_info = {
                 "sample_rate": sample_rate,
@@ -267,6 +268,9 @@ class AudioProcessor:
     def _calculate_quality_metrics(self, audio: np.ndarray, sample_rate: int) -> Dict:
         """Calculate audio quality metrics."""
         metrics = {}
+        
+        # Calculate duration
+        duration = len(audio) / sample_rate
         
         # Calculate SNR (Signal-to-Noise Ratio)
         try:

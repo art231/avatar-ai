@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 import os
 import uuid
 import shutil
@@ -44,7 +44,7 @@ class SynthesizeResponse(BaseModel):
     success: bool
     audio_path: Optional[str] = None
     processing_time: float
-    audio_info: Dict[str, any]
+    audio_info: Dict[str, Any]
     language: str
     text_length: int
     cached: bool = False
@@ -64,14 +64,14 @@ class LanguageInfo(BaseModel):
 @app.get("/")
 async def root():
     """Root endpoint with service information."""
-    health = await health()
+    health_status = await health()
     languages = await list_languages()
     
     return {
         "message": "AvatarAI XTTS Service",
         "status": "running",
         "version": settings.app_version,
-        "health": health,
+        "health": health_status,
         "supported_languages": len(languages["languages"])
     }
 

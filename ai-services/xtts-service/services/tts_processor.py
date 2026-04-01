@@ -66,7 +66,8 @@ class TTSProcessor:
                 self.tts_model = TTS(
                     model_name=settings.xtts_model_name,
                     progress_bar=False,
-                    gpu=True if self.device == "cuda" else False
+                    gpu=True if self.device == "cuda" else False,
+                    tos_agreed=True  # Automatically agree to Terms of Service
                 )
                 
                 # Move model to appropriate device
@@ -83,7 +84,8 @@ class TTSProcessor:
                 self.tts_model = TTS(
                     model_name=settings.xtts_model_name,
                     progress_bar=False,
-                    gpu=False
+                    gpu=False,
+                    tos_agreed=True  # Automatically agree to Terms of Service
                 )
                 
                 self.logger.info("XTTS v2 model loaded in CPU mode")

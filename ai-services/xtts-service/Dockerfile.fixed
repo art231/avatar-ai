@@ -8,7 +8,6 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV TORCH_CUDA_ARCH_LIST="8.6;8.9;9.0"
 ENV TTS_HOME="/app/models"
 ENV XTTS_MODEL_NAME="tts_models/multilingual/multi-dataset/xtts_v2"
-ENV COQUI_TOS_AGREED=1
 
 # Install system dependencies for TTS
 RUN apt-get update && \

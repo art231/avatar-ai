@@ -18,6 +18,7 @@ public class AIServiceClient : IAIServiceClient
     private readonly string _xttsServiceUrl;
     private readonly string _mediaAnalyzerUrl;
     private readonly string _lipsyncServiceUrl;
+    private readonly string _trainingPipelineUrl;
 
     public AIServiceClient(HttpClient httpClient, ILogger<AIServiceClient> logger, IConfiguration configuration)
     {
@@ -29,6 +30,7 @@ public class AIServiceClient : IAIServiceClient
         _xttsServiceUrl = configuration["AI_SERVICES:XTTS_SERVICE_URL"] ?? "http://xtts-service:5003";
         _mediaAnalyzerUrl = configuration["AI_SERVICES:MEDIA_ANALYZER_URL"] ?? "http://media-analyzer:5005";
         _lipsyncServiceUrl = configuration["AI_SERVICES:LIPSYNC_SERVICE_URL"] ?? "http://lipsync-service:5006";
+        _trainingPipelineUrl = configuration["AI_SERVICES:TRAINING_PIPELINE_URL"] ?? "http://training-pipeline:5007";
         
         _retryPolicy = Policy
             .Handle<HttpRequestException>()
@@ -152,47 +154,69 @@ public class AIServiceClient : IAIServiceClient
             
             try
             {
-                // For MVP, simulate media analysis with basic checks
-                if (File.Exists(mediaFilePath))
+                // Try to call the actual Media Analyzer service if available
+                if (await IsServiceAvailableAsync(_mediaAnalyzerUrl, token))
                 {
-                    var extension = Path.GetExtension(mediaFilePath).ToLower();
-                    var isImage = extension == ".jpg" || extension == ".jpeg" || extension == ".png";
-                    var isVideo = extension == ".mp4" || extension == ".avi" || extension == ".mov";
+                    _logger.LogInformation("Calling Media Analyzer service at: {Url}", _mediaAnalyzerUrl);
                     
-                    var result = new
+                    // Determine media type based on file extension
+                    var extension = Path.GetExtension(mediaFilePath).ToLower();
+                    var mediaType = extension switch
                     {
-                        FaceDetected = true,
-                        QualityScore = 0.8,
-                        AlignedFramesPath = isImage ? mediaFilePath : $"/data/output/aligned_{Guid.NewGuid()}",
-                        Metadata = new 
-                        { 
-                            Type = isImage ? "image" : isVideo ? "video" : "unknown",
-                            Width = 512, 
-                            Height = 512, 
-                            Frames = isImage ? 1 : 25 
-                        },
-                        IsValid = isImage || isVideo,
-                        Message = "Media analysis complete"
+                        ".jpg" or ".jpeg" or ".png" or ".bmp" or ".webp" => "image",
+                        ".mp4" or ".avi" or ".mov" or ".mkv" or ".webm" => "video",
+                        _ => "unknown"
                     };
                     
-                    return JsonSerializer.Serialize(result, _jsonOptions);
+                    if (mediaType == "unknown")
+                    {
+                        throw new ArgumentException($"Unsupported media format: {extension}");
+                    }
+                    
+                    // Check if file exists
+                    if (!File.Exists(mediaFilePath))
+                    {
+                        throw new FileNotFoundException($"Media file not found: {mediaFilePath}");
+                    }
+                    
+                    // Create multipart form data
+                    using var formData = new MultipartFormDataContent();
+                    
+                    // Add media file
+                    var fileContent = new ByteArrayContent(await File.ReadAllBytesAsync(mediaFilePath, token));
+                    fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(GetMimeType(extension));
+                    formData.Add(fileContent, "file", Path.GetFileName(mediaFilePath));
+                    
+                    // Add parameters
+                    formData.Add(new StringContent(mediaType), "media_type");
+                    formData.Add(new StringContent("face_detection,quality_assessment"), "analysis_types");
+                    formData.Add(new StringContent("true"), "align_faces");
+                    formData.Add(new StringContent("json"), "output_format");
+                    
+                    // Call Media Analyzer service
+                    var response = await _httpClient.PostAsync($"{_mediaAnalyzerUrl}/analyze", formData, token);
+                    response.EnsureSuccessStatusCode();
+                    
+                    var responseJson = await response.Content.ReadAsStringAsync(token);
+                    var result = JsonSerializer.Deserialize<JsonElement>(responseJson, _jsonOptions);
+                    
+                    _logger.LogInformation("Media analysis successful for: {FilePath}", mediaFilePath);
+                    
+                    // Return the full analysis result as JSON string
+                    return responseJson;
+                }
+                else
+                {
+                    _logger.LogWarning("Media Analyzer service not available, using simulation");
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in media analysis simulation");
+                _logger.LogWarning(ex, "Failed to call Media Analyzer service, using simulation");
             }
             
-            // Fallback simulation
-            var fallbackResult = new
-            {
-                FaceDetected = true,
-                QualityScore = 0.85,
-                AlignedFramesPath = $"/data/output/aligned_{Guid.NewGuid()}",
-                Metadata = new { Width = 512, Height = 512, Frames = 25 }
-            };
-            
-            return JsonSerializer.Serialize(fallbackResult, _jsonOptions);
+            // Fallback to simulation
+            return await SimulateMediaAnalysisAsync(mediaFilePath, token);
         }, new Context("AnalyzeMedia"), cancellationToken);
     }
 
@@ -368,5 +392,327 @@ public class AIServiceClient : IAIServiceClient
         }
         
         return false;
+    }
+    
+    private string GetMimeType(string fileExtension)
+    {
+        return fileExtension.ToLower() switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".bmp" => "image/bmp",
+            ".webp" => "image/webp",
+            ".mp4" => "video/mp4",
+            ".avi" => "video/x-msvideo",
+            ".mov" => "video/quicktime",
+            ".mkv" => "video/x-matroska",
+            ".webm" => "video/webm",
+            ".wav" => "audio/wav",
+            ".mp3" => "audio/mpeg",
+            _ => "application/octet-stream"
+        };
+    }
+    
+    private async Task<string> SimulateMediaAnalysisAsync(string mediaFilePath, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // For MVP, simulate media analysis with basic checks
+            if (File.Exists(mediaFilePath))
+            {
+                var extension = Path.GetExtension(mediaFilePath).ToLower();
+                var isImage = extension == ".jpg" || extension == ".jpeg" || extension == ".png" || extension == ".bmp" || extension == ".webp";
+                var isVideo = extension == ".mp4" || extension == ".avi" || extension == ".mov" || extension == ".mkv" || extension == ".webm";
+                
+                var result = new
+                {
+                    success = true,
+                    task_id = $"simulation_{Guid.NewGuid()}",
+                    media_type = isImage ? "image" : isVideo ? "video" : "unknown",
+                    file_info = new 
+                    { 
+                        filename = Path.GetFileName(mediaFilePath),
+                        original_name = Path.GetFileName(mediaFilePath),
+                        size_bytes = new FileInfo(mediaFilePath).Length,
+                        media_type = isImage ? "image" : isVideo ? "video" : "unknown",
+                        extension = extension,
+                        path = mediaFilePath
+                    },
+                    analysis_results = new
+                    {
+                        image_info = new
+                        {
+                            resolution = new[] { 512, 512 },
+                            channels = 3,
+                            aspect_ratio = 1.0
+                        },
+                        faces = new[]
+                        {
+                            new
+                            {
+                                face_id = 0,
+                                bounding_box = new[] { 100, 100, 412, 412 },
+                                landmarks = new[] { new[] { 150f, 150f }, new[] { 362f, 150f }, new[] { 256f, 256f } },
+                                quality_score = 0.85,
+                                detection_confidence = 0.95,
+                                age = 30,
+                                gender = "male",
+                                face_size = 312,
+                                is_frontal = true,
+                                is_occluded = false,
+                                emotion = "neutral",
+                                aligned_face_path = isImage ? mediaFilePath : null
+                            }
+                        },
+                        best_face = new
+                        {
+                            face_id = 0,
+                            quality_score = 0.85
+                        },
+                        quality_assessment = new
+                        {
+                            image_quality = new
+                            {
+                                blurriness = 0.8,
+                                brightness = 0.7,
+                                contrast = 0.75,
+                                noise = 0.85,
+                                overall = 0.775
+                            },
+                            face_quality = new[]
+                            {
+                                new
+                                {
+                                    face_id = 0,
+                                    quality_score = 0.85,
+                                    detection_confidence = 0.95,
+                                    is_frontal = true,
+                                    is_occluded = false
+                                }
+                            },
+                            average_face_quality = 0.85
+                        },
+                        validation_passed = true
+                    },
+                    processing_time = 1.5,
+                    message = "Media analysis simulation complete",
+                    created_at = DateTime.UtcNow
+                };
+                
+                return JsonSerializer.Serialize(result, _jsonOptions);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in media analysis simulation");
+        }
+        
+        // Fallback simulation
+        var fallbackResult = new
+        {
+            success = true,
+            task_id = $"fallback_{Guid.NewGuid()}",
+            media_type = "image",
+            file_info = new 
+            { 
+                filename = Path.GetFileName(mediaFilePath),
+                original_name = Path.GetFileName(mediaFilePath),
+                size_bytes = 1024 * 1024,
+                media_type = "image",
+                extension = ".jpg",
+                path = mediaFilePath
+            },
+            analysis_results = new
+            {
+                image_info = new
+                {
+                    resolution = new[] { 512, 512 },
+                    channels = 3,
+                    aspect_ratio = 1.0
+                },
+                faces = new object[0],
+                best_face = (object?)null,
+                quality_assessment = new
+                {
+                    image_quality = new
+                    {
+                        blurriness = 0.7,
+                        brightness = 0.6,
+                        contrast = 0.65,
+                        noise = 0.8,
+                        overall = 0.6875
+                    },
+                    face_quality = new object[0],
+                    average_face_quality = 0.0
+                },
+                validation_passed = false
+            },
+            processing_time = 0.5,
+            message = "Media analysis fallback simulation",
+            created_at = DateTime.UtcNow
+        };
+        
+        return JsonSerializer.Serialize(fallbackResult, _jsonOptions);
+    }
+
+    public async Task<Dictionary<string, object>> StartTrainingAsync(
+        string userId,
+        string avatarId,
+        List<string> imagePaths,
+        string voiceSamplePath,
+        Dictionary<string, object>? trainingConfig = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await _retryPolicy.ExecuteAsync(async (context, token) =>
+        {
+            _logger.LogInformation("Starting training pipeline for avatar {AvatarId} with {ImageCount} images", 
+                avatarId, imagePaths.Count);
+            
+            try
+            {
+                // Try to call the actual Training Pipeline service if available
+                if (await IsServiceAvailableAsync(_trainingPipelineUrl, token))
+                {
+                    _logger.LogInformation("Calling Training Pipeline service at: {Url}", _trainingPipelineUrl);
+                    
+                    // Prepare request data
+                    var requestData = new
+                    {
+                        user_id = userId,
+                        avatar_id = avatarId,
+                        image_paths = imagePaths,
+                        voice_sample_path = voiceSamplePath,
+                        config = trainingConfig ?? new Dictionary<string, object>()
+                    };
+                    
+                    var jsonContent = JsonSerializer.Serialize(requestData, _jsonOptions);
+                    var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+                    
+                    // Call Training Pipeline service
+                    var response = await _httpClient.PostAsync($"{_trainingPipelineUrl}/start", content, token);
+                    response.EnsureSuccessStatusCode();
+                    
+                    var responseJson = await response.Content.ReadAsStringAsync(token);
+                    var result = JsonSerializer.Deserialize<Dictionary<string, object>>(responseJson, _jsonOptions);
+                    
+                    _logger.LogInformation("Training pipeline started successfully for avatar {AvatarId}", avatarId);
+                    return result ?? new Dictionary<string, object>();
+                }
+                else
+                {
+                    _logger.LogWarning("Training Pipeline service not available, using simulation");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to call Training Pipeline service, using simulation");
+            }
+            
+            // Fallback to simulation
+            return await SimulateTrainingStartAsync(userId, avatarId, imagePaths, voiceSamplePath, trainingConfig, token);
+        }, new Context("StartTraining"), cancellationToken);
+    }
+
+    public async Task<Dictionary<string, object>> GetTrainingStatusAsync(
+        string taskId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _retryPolicy.ExecuteAsync(async (context, token) =>
+        {
+            _logger.LogInformation("Getting training status for task {TaskId}", taskId);
+            
+            try
+            {
+                // Try to call the actual Training Pipeline service if available
+                if (await IsServiceAvailableAsync(_trainingPipelineUrl, token))
+                {
+                    _logger.LogInformation("Calling Training Pipeline service at: {Url}", _trainingPipelineUrl);
+                    
+                    // Call Training Pipeline service
+                    var response = await _httpClient.GetAsync($"{_trainingPipelineUrl}/status/{taskId}", token);
+                    response.EnsureSuccessStatusCode();
+                    
+                    var responseJson = await response.Content.ReadAsStringAsync(token);
+                    var result = JsonSerializer.Deserialize<Dictionary<string, object>>(responseJson, _jsonOptions);
+                    
+                    _logger.LogInformation("Training status retrieved successfully for task {TaskId}", taskId);
+                    return result ?? new Dictionary<string, object>();
+                }
+                else
+                {
+                    _logger.LogWarning("Training Pipeline service not available, using simulation");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to call Training Pipeline service, using simulation");
+            }
+            
+            // Fallback to simulation
+            return await SimulateTrainingStatusAsync(taskId, token);
+        }, new Context("GetTrainingStatus"), cancellationToken);
+    }
+
+    private async Task<Dictionary<string, object>> SimulateTrainingStartAsync(
+        string userId,
+        string avatarId,
+        List<string> imagePaths,
+        string voiceSamplePath,
+        Dictionary<string, object>? trainingConfig,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Simulating training start for avatar {AvatarId}", avatarId);
+        
+        await Task.Delay(500, cancellationToken); // Simulate processing time
+        
+        var taskId = $"train_{Guid.NewGuid()}";
+        
+        return new Dictionary<string, object>
+        {
+            ["task_id"] = taskId,
+            ["user_id"] = userId,
+            ["avatar_id"] = avatarId,
+            ["status"] = "processing",
+            ["stage"] = "data_preparation",
+            ["progress"] = 0.1,
+            ["created_at"] = DateTime.UtcNow,
+            ["started_at"] = DateTime.UtcNow,
+            ["image_count"] = imagePaths.Count,
+            ["has_voice"] = !string.IsNullOrEmpty(voiceSamplePath),
+            ["message"] = "Training pipeline simulation started"
+        };
+    }
+
+    private async Task<Dictionary<string, object>> SimulateTrainingStatusAsync(
+        string taskId,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Simulating training status for task {TaskId}", taskId);
+        
+        await Task.Delay(100, cancellationToken); // Simulate processing time
+        
+        // Simulate random progress
+        var random = new Random();
+        var progress = Math.Min(1.0, 0.1 + random.NextDouble() * 0.8);
+        
+        var stages = new[] { "data_preparation", "face_analysis", "voice_analysis", "model_training", "model_validation", "completed" };
+        var stageIndex = Math.Min((int)(progress * stages.Length), stages.Length - 1);
+        var currentStage = stages[stageIndex];
+        
+        var status = progress >= 1.0 ? "completed" : "processing";
+        
+        return new Dictionary<string, object>
+        {
+            ["task_id"] = taskId,
+            ["status"] = status,
+            ["stage"] = currentStage,
+            ["progress"] = progress,
+            ["created_at"] = DateTime.UtcNow.AddHours(-1),
+            ["started_at"] = DateTime.UtcNow.AddHours(-1),
+            ["completed_at"] = progress >= 1.0 ? DateTime.UtcNow : (object?)null,
+            ["output_path"] = progress >= 1.0 ? $"/data/models/{Guid.NewGuid()}.safetensors" : null,
+            ["error_message"] = (object?)null,
+            ["message"] = $"Training simulation: {currentStage} ({progress:P1})"
+        };
     }
 }

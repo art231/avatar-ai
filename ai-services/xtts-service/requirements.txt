@@ -31,6 +31,7 @@ loguru==0.7.2
 python-dotenv==1.0.0
 aiofiles==23.2.1
 python-json-logger==2.0.7
+setuptools==69.0.3  # Required for pkg_resources
 
 # Development and testing
 pytest==7.4.3

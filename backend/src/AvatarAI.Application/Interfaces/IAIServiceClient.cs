@@ -13,4 +13,17 @@ public interface IAIServiceClient
     Task<Dictionary<string, object>> AnalyzeVoiceAsync(string audioPath, CancellationToken cancellationToken = default);
     Task<Dictionary<string, object>> TrainModelAsync(Dictionary<string, object> trainingConfig, CancellationToken cancellationToken = default);
     Task<Dictionary<string, object>> GenerateAudioAsync(string text, string modelPath, CancellationToken cancellationToken = default);
+    
+    // Training Pipeline methods
+    Task<Dictionary<string, object>> StartTrainingAsync(
+        string userId,
+        string avatarId,
+        List<string> imagePaths,
+        string voiceSamplePath,
+        Dictionary<string, object>? trainingConfig = null,
+        CancellationToken cancellationToken = default);
+    
+    Task<Dictionary<string, object>> GetTrainingStatusAsync(
+        string taskId,
+        CancellationToken cancellationToken = default);
 }
