@@ -38,7 +38,10 @@ namespace AvatarAI.Application.Services
                 // Step 4: Generate video with lip sync
                 await GenerateVideoWithLipSyncAsync(taskDto, cancellationToken);
                 
-                // Step 5: Finalize task
+                // Step 5: Render final video with Video Renderer
+                await RenderFinalVideoAsync(taskDto, cancellationToken);
+                
+                // Step 6: Finalize task
                 taskDto.Status = Domain.Enums.TaskStatus.Completed;
                 taskDto.CompletedAt = DateTime.UtcNow;
                 
@@ -270,6 +273,33 @@ namespace AvatarAI.Application.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error processing lip sync for video: {videoPath}: {ex.Message}");
+                throw;
+            }
+        }
+
+        private async Task RenderFinalVideoAsync(GenerationTaskDto taskDto, CancellationToken cancellationToken)
+        {
+            Console.WriteLine($"Rendering final video with Video Renderer for task {taskDto.Id}");
+
+            try
+            {
+                // For MVP, we'll simulate video rendering
+                // In production, this would call the video-renderer service
+                
+                // Simulate processing delay
+                await Task.Delay(2500, cancellationToken);
+                
+                // Create mock final video output path
+                var finalVideoPath = Path.Combine("/data/output/video/final", $"{taskDto.Id}_final_hd.mp4");
+                
+                // Update task with final output path
+                taskDto.OutputPath = finalVideoPath;
+                
+                Console.WriteLine($"Final video rendering completed for task {taskDto.Id}. Output: {finalVideoPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error rendering final video for task {taskDto.Id}: {ex.Message}");
                 throw;
             }
         }
