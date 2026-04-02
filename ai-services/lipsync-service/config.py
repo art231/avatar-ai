@@ -48,10 +48,27 @@ class Settings(BaseSettings):
     # MuseTalk specific
     muse_talk_model_path: Path = models_dir / "muse_talk"
     muse_talk_checkpoint: str = os.getenv("MUSE_TALK_CHECKPOINT", "muse_talk.pth")
+    muse_talk_config: str = os.getenv("MUSE_TALK_CONFIG", "musetalk.json")
     
     # Wav2Lip specific
     wav2lip_model_path: Path = models_dir / "wav2lip"
     wav2lip_checkpoint: str = os.getenv("WAV2LIP_CHECKPOINT", "wav2lip.pth")
+    
+    # Additional models for enhanced processing
+    dwpose_model_path: Path = models_dir / "dwpose"
+    dwpose_checkpoint: str = os.getenv("DWPOSE_CHECKPOINT", "dw-ll_ucoco_384.pth")
+    
+    face_parse_model_path: Path = models_dir / "face-parse-bisent"
+    face_parse_checkpoint: str = os.getenv("FACE_PARSE_CHECKPOINT", "79999_iter.pth")
+    face_parse_backbone: str = os.getenv("FACE_PARSE_BACKBONE", "resnet18-5c106cde.pth")
+    
+    whisper_model_path: Path = models_dir / "whisper"
+    whisper_checkpoint: str = os.getenv("WHISPER_CHECKPOINT", "tiny.pt")
+    
+    # Enhanced processing flags
+    use_dwpose: bool = os.getenv("USE_DWPOSE", "true").lower() == "true"
+    use_face_parse: bool = os.getenv("USE_FACE_PARSE", "true").lower() == "true"
+    use_whisper: bool = os.getenv("USE_WHISPER", "false").lower() == "true"
     
     class Config:
         env_file = ".env"

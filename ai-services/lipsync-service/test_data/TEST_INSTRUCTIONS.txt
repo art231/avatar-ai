@@ -1,0 +1,22 @@
+Инструкция по тестированию Lipsync Service:
+
+1. Тестовые данные созданы в: c:\Users\NagibatorPC228\Desktop\git\avatar-ai\ai-services\lipsync-service\test_data
+2. Аудио файл: test_speech.wav
+3. Для видео: используйте любой MP4 файл с лицом или создайте с помощью:
+   - OpenCV: cv2.VideoWriter
+   - FFmpeg: ffmpeg -f lavfi -i testsrc=duration=3:size=640x480:rate=25 test_video.mp4
+   - Или любой короткий видео файл с лицом
+
+4. Для тестирования Lipsync Service:
+   python -c "
+from pathlib import Path
+from services.lipsync_processor_updated import LipSyncProcessor
+
+processor = LipSyncProcessor('muse_talk')
+video_path = Path('path/to/your/video.mp4')
+audio_path = Path('c:\Users\NagibatorPC228\Desktop\git\avatar-ai\ai-services\lipsync-service\test_data\test_speech.wav')
+output_path = Path('output_lipsync.mp4')
+
+success = processor.process(video_path, audio_path, output_path)
+    print(f'Success: {success}')
+   "
