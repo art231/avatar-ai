@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Output, Input, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -33,7 +33,7 @@ import { FormsModule } from '@angular/forms';
           accept="image/jpeg,image/png,image/webp" 
           hidden
         />
-        <button type="button" class="btn btn-primary" (click)="fileInput.click()">
+        <button type="button" class="btn btn-primary" (click)="triggerFileInput()">
           Выбрать файлы
         </button>
       </div>
@@ -60,12 +60,12 @@ import { FormsModule } from '@angular/forms';
               </div>
             </div>
             <div class="preview-info">
-              <span class="file-name">{{files[i]?.name || 'Изображение ' + (i + 1)}}</span>
-              <span class="file-size">{{formatFileSize(files[i]?.size)}}</span>
+              <span class="file-name">{{files[i].name || 'Изображение ' + (i + 1)}}</span>
+              <span class="file-size">{{formatFileSize(files[i].size)}}</span>
             </div>
           </div>
           
-          <div class="preview-item add-more" *ngIf="previewUrls.length < maxImages" (click)="fileInput.click()">
+          <div class="preview-item add-more" *ngIf="previewUrls.length < maxImages" (click)="triggerFileInput()">
             <div class="add-more-content">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -299,9 +299,15 @@ export class ImageUploadComponent implements OnInit {
   @Input() showValidation: boolean = false;
   @Output() imagesChange = new EventEmitter<File[]>();
 
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
   files: File[] = [];
   previewUrls: string[] = [];
   isDragOver = false;
+
+  triggerFileInput(): void {
+    this.fileInput.nativeElement.click();
+  }
 
   ngOnInit() {
     // Инициализация компонента

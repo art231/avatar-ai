@@ -11,86 +11,136 @@ namespace AvatarAI.Application.Handlers;
 
 public class CreateGenerationTaskCommandHandler : IRequestHandler<CreateGenerationTaskCommand, GenerationTaskDto>
 {
-    private readonly IAIServiceClient _aiServiceClient;
+    private readonly IAvatarRepository _avatarRepository;
+    private readonly IGenerationTaskRepository _generationTaskRepository;
+    private readonly ITaskLogRepository _taskLogRepository;
+    private readonly IPipelineOrchestrator _pipelineOrchestrator;
     private readonly IMapper _mapper;
     private readonly ILogger<CreateGenerationTaskCommandHandler> _logger;
 
     public CreateGenerationTaskCommandHandler(
-        IAIServiceClient aiServiceClient,
+        IAvatarRepository avatarRepository,
+        IGenerationTaskRepository generationTaskRepository,
+        ITaskLogRepository taskLogRepository,
+        IPipelineOrchestrator pipelineOrchestrator,
         IMapper mapper,
         ILogger<CreateGenerationTaskCommandHandler> logger)
     {
-        _aiServiceClient = aiServiceClient;
+        _avatarRepository = avatarRepository;
+        _generationTaskRepository = generationTaskRepository;
+        _taskLogRepository = taskLogRepository;
+        _pipelineOrchestrator = pipelineOrchestrator;
         _mapper = mapper;
         _logger = logger;
     }
 
     public async Task<GenerationTaskDto> Handle(CreateGenerationTaskCommand request, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Starting generation task for avatar {AvatarId} with text: {Text}", 
+        _logger.LogInformation("Creating generation task for avatar {AvatarId} with text: {Text}", 
             request.AvatarId, request.SpeechText);
 
-        // In real implementation, we would:
-        // 1. Get avatar and voice profile from database
-        // 2. Process audio through AI services
-        // 3. Generate video with lipsync
-        // 4. Save results and update task status
-        
-        // For MVP simulation, we'll create a task and simulate the pipeline
+        // Validate avatar exists and is ready for generation
+        var avatar = await _avatarRepository.GetByIdAsync(request.AvatarId, cancellationToken);
+        if (avatar == null)
+        {
+            throw new ArgumentException($"Avatar with ID {request.AvatarId} not found");
+        }
+
+        if (!avatar.IsReadyForGeneration())
+        {
+            throw new ArgumentException($"Avatar with ID {request.AvatarId} is not ready for generation. Status: {avatar.Status}");
+        }
+
+        // Check if avatar already has active tasks
+        var activeTasks = await _generationTaskRepository.GetByAvatarIdAsync(request.AvatarId, cancellationToken);
+        var hasActiveTasks = activeTasks.Any(t => t.Status == Domain.Enums.TaskStatus.Pending || t.Status == Domain.Enums.TaskStatus.Processing);
+        if (hasActiveTasks)
+        {
+            throw new ArgumentException($"Avatar with ID {request.AvatarId} already has active tasks. Please wait for them to complete.");
+        }
+
+        // Create and save task
         var task = new GenerationTask(request.AvatarId, request.SpeechText, request.ActionPrompt);
-        
-        // Simulate the MVP pipeline steps
-        await SimulateMVPPipeline(task, cancellationToken);
-        
+        await _generationTaskRepository.AddAsync(task, cancellationToken);
+
+        // Add initial log
+        var initialLog = new TaskLog(task.Id, Domain.Enums.TaskStage.AudioPreprocessing, "Generation task created and queued for processing");
+        await _taskLogRepository.AddAsync(initialLog, cancellationToken);
+
+        // Start pipeline processing in background (fire-and-forget)
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await ProcessTaskInBackground(task, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing task {TaskId} in background", task.Id);
+            }
+        }, cancellationToken);
+
         var taskDto = _mapper.Map<GenerationTaskDto>(task);
         return taskDto;
     }
 
-    private async Task SimulateMVPPipeline(GenerationTask task, CancellationToken cancellationToken)
+    private async Task ProcessTaskInBackground(GenerationTask task, CancellationToken cancellationToken)
     {
         try
         {
-            // Step 1: Audio preprocessing (simulated)
-            task.AddLog(Domain.Enums.TaskStage.AudioPreprocessing, "Starting audio preprocessing");
-            _logger.LogInformation("Step 1: Audio preprocessing for task {TaskId}", task.Id);
-            await Task.Delay(1000, cancellationToken);
+            _logger.LogInformation("Starting background processing for task {TaskId}", task.Id);
+
+            // Update task status to Processing
+            task.UpdateStatus(Domain.Enums.TaskStatus.Processing);
+            await _generationTaskRepository.UpdateAsync(task, cancellationToken);
             
-            // Step 2: Voice cloning and synthesis (simulated)
-            task.AddLog(Domain.Enums.TaskStage.VoiceCloning, "Cloning voice and synthesizing speech");
-            _logger.LogInformation("Step 2: Voice cloning for task {TaskId}", task.Id);
-            await Task.Delay(2000, cancellationToken);
+            var processingLog = new TaskLog(task.Id, Domain.Enums.TaskStage.AudioPreprocessing, "Starting audio preprocessing");
+            await _taskLogRepository.AddAsync(processingLog, cancellationToken);
+
+            // Get avatar for pipeline processing
+            var avatar = await _avatarRepository.GetByIdAsync(task.AvatarId, cancellationToken);
+            if (avatar == null)
+            {
+                throw new InvalidOperationException($"Avatar with ID {task.AvatarId} not found during processing");
+            }
+
+            // Create task DTO for pipeline
+            var taskDto = _mapper.Map<GenerationTaskDto>(task);
             
-            // Step 3: Media analysis (simulated)
-            task.AddLog(Domain.Enums.TaskStage.MediaAnalysis, "Analyzing media files");
-            _logger.LogInformation("Step 3: Media analysis for task {TaskId}", task.Id);
-            await Task.Delay(1500, cancellationToken);
+            // Process through pipeline orchestrator
+            var processedTask = await _pipelineOrchestrator.ProcessAvatarGenerationAsync(taskDto, cancellationToken);
             
-            // Step 4: Lipsync application (simulated)
-            task.AddLog(Domain.Enums.TaskStage.Lipsync, "Applying lipsync to video");
-            _logger.LogInformation("Step 4: Lipsync application for task {TaskId}", task.Id);
-            await Task.Delay(3000, cancellationToken);
+            // Update task with results
+            task.UpdateStatus(processedTask.Status);
+            task.UpdateStage(Domain.Enums.TaskStage.Completed);
+            task.SetOutputPath(processedTask.OutputPath ?? string.Empty);
+            task.UpdateProgress(1.0m);
             
-            // Step 5: Video rendering (simulated)
-            task.AddLog(Domain.Enums.TaskStage.VideoRendering, "Rendering final video");
-            _logger.LogInformation("Step 5: Video rendering for task {TaskId}", task.Id);
-            await Task.Delay(1000, cancellationToken);
+            if (processedTask.CompletedAt.HasValue)
+            {
+                // Note: CompletedAt is set automatically when status changes to Completed
+            }
             
-            // Step 6: Post-processing (simulated)
-            task.AddLog(Domain.Enums.TaskStage.PostProcessing, "Finalizing video output");
-            _logger.LogInformation("Step 6: Post-processing for task {TaskId}", task.Id);
-            await Task.Delay(500, cancellationToken);
+            await _generationTaskRepository.UpdateAsync(task, cancellationToken);
             
-            // Mark as completed
-            task.UpdateStatus(Domain.Enums.TaskStatus.Completed);
-            task.SetOutputPath($"/data/output/final_{Guid.NewGuid()}.mp4");
+            var completedLog = new TaskLog(task.Id, Domain.Enums.TaskStage.Completed, 
+                $"Generation task completed successfully. Output: {processedTask.OutputPath}");
+            await _taskLogRepository.AddAsync(completedLog, cancellationToken);
             
-            _logger.LogInformation("MVP pipeline completed for task {TaskId}", task.Id);
+            _logger.LogInformation("Background processing completed for task {TaskId}", task.Id);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in MVP pipeline for task {TaskId}", task.Id);
+            _logger.LogError(ex, "Error in background processing for task {TaskId}", task.Id);
+            
+            // Update task status to Failed
             task.UpdateStatus(Domain.Enums.TaskStatus.Failed);
-            throw;
+            task.UpdateErrorMessage(ex.Message);
+            await _generationTaskRepository.UpdateAsync(task, cancellationToken);
+            
+            var failedLog = new TaskLog(task.Id, Domain.Enums.TaskStage.Failed, 
+                $"Generation task failed: {ex.Message}");
+            await _taskLogRepository.AddAsync(failedLog, cancellationToken);
         }
     }
 }

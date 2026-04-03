@@ -231,11 +231,11 @@ interface TextStats {
         <div class="generations-list">
           <div *ngFor="let task of recentTasks" class="generation-item">
             <div class="generation-info">
-              <h4 class="generation-title">{{ task.text.substring(0, 50) }}{{ task.text.length > 50 ? '...' : '' }}</h4>
+              <h4 class="generation-title">{{ task.speechText.substring(0, 50) }}{{ task.speechText.length > 50 ? '...' : '' }}</h4>
               <p class="generation-details">
                 {{ task.avatarName }} • 
-                {{ task.settings?.videoLength || 'Medium' }} • 
-                {{ task.settings?.resolution || '1080p' }}
+                {{ task.videoLength || 'Medium' }} • 
+                {{ task.resolution || '1080p' }}
               </p>
               <p class="generation-time">
                 <span [class]="generationTaskService.getStatusColor(task)">
@@ -890,7 +890,7 @@ export class GenerationComponent implements OnInit, OnDestroy {
 
     const request: CreateGenerationTaskRequest = {
       avatarId: this.selectedAvatar.id,
-      text: this.generationText,
+      speechText: this.generationText,
       voiceStyle: this.settings.voiceStyle,
       videoLength: this.settings.videoLength,
       resolution: this.settings.resolution,
@@ -926,17 +926,15 @@ export class GenerationComponent implements OnInit, OnDestroy {
     if (!task.avatarId) return;
     
     this.selectedAvatar = this.avatars.find(a => a.id === task.avatarId) || null;
-    this.generationText = task.text;
+    this.generationText = task.speechText;
     
-    // Обновляем настройки из задачи, если они есть
-    if (task.settings) {
-      this.settings = {
-        voiceStyle: task.settings.voiceStyle || this.settings.voiceStyle,
-        videoLength: task.settings.videoLength || this.settings.videoLength,
-        resolution: task.settings.resolution || this.settings.resolution,
-        background: task.settings.background || this.settings.background
-      };
-    }
+    // Обновляем настройки из задачи
+    this.settings = {
+      voiceStyle: task.voiceStyle || this.settings.voiceStyle,
+      videoLength: task.videoLength || this.settings.videoLength,
+      resolution: task.resolution || this.settings.resolution,
+      background: task.background || this.settings.background
+    };
     
     this.updateTextStats();
     this.goToStep(3);

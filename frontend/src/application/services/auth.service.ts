@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
-import { ApiClientService } from '../../infrastructure/api/api-client.service';
+import { ApiClientService, ApiResponse } from '../../infrastructure/api/api-client.service';
 
 export interface LoginRequest {
   email: string;
@@ -63,10 +63,10 @@ export class AuthService {
     }
   }
 
-  login(credentials: LoginRequest): Observable<AuthResponse> {
+  login(credentials: LoginRequest): Observable<ApiResponse<AuthResponse>> {
     return this.apiClient.post<AuthResponse>('/auth/login', credentials).pipe(
       tap(response => {
-        this.handleAuthResponse(response);
+        this.handleAuthResponse(response.data);
       }),
       catchError(error => {
         console.error('Login error:', error);
@@ -75,10 +75,10 @@ export class AuthService {
     );
   }
 
-  register(userData: RegisterRequest): Observable<AuthResponse> {
+  register(userData: RegisterRequest): Observable<ApiResponse<AuthResponse>> {
     return this.apiClient.post<AuthResponse>('/auth/register', userData).pipe(
       tap(response => {
-        this.handleAuthResponse(response);
+        this.handleAuthResponse(response.data);
       }),
       catchError(error => {
         console.error('Registration error:', error);
@@ -93,7 +93,7 @@ export class AuthService {
     this.isAuthenticatedSubject.next(false);
   }
 
-  refreshToken(): Observable<AuthResponse> {
+  refreshToken(): Observable<ApiResponse<AuthResponse>> {
     const refreshToken = this.getRefreshToken();
     
     if (!refreshToken) {
@@ -103,7 +103,7 @@ export class AuthService {
 
     return this.apiClient.post<AuthResponse>('/auth/refresh', { refreshToken }).pipe(
       tap(response => {
-        this.handleAuthResponse(response);
+        this.handleAuthResponse(response.data);
       }),
       catchError(error => {
         console.error('Token refresh error:', error);
@@ -113,11 +113,11 @@ export class AuthService {
     );
   }
 
-  forgotPassword(email: string): Observable<{ success: boolean; message: string }> {
+  forgotPassword(email: string): Observable<ApiResponse<{ success: boolean; message: string }>> {
     return this.apiClient.post<{ success: boolean; message: string }>('/auth/forgot-password', { email });
   }
 
-  resetPassword(token: string, newPassword: string): Observable<{ success: boolean; message: string }> {
+  resetPassword(token: string, newPassword: string): Observable<ApiResponse<{ success: boolean; message: string }>> {
     return this.apiClient.post<{ success: boolean; message: string }>('/auth/reset-password', {
       token,
       newPassword
@@ -173,16 +173,16 @@ export class AuthService {
     localStorage.removeItem(this.USER_KEY);
   }
 
-  updateUserProfile(userData: Partial<User>): Observable<User> {
+  updateUserProfile(userData: Partial<User>): Observable<ApiResponse<User>> {
     return this.apiClient.put<User>('/auth/profile', userData).pipe(
-      tap(updatedUser => {
-        this.setUser(updatedUser);
-        this.currentUserSubject.next(updatedUser);
+      tap(response => {
+        this.setUser(response.data);
+        this.currentUserSubject.next(response.data);
       })
     );
   }
 
-  changePassword(currentPassword: string, newPassword: string): Observable<{ success: boolean; message: string }> {
+  changePassword(currentPassword: string, newPassword: string): Observable<ApiResponse<{ success: boolean; message: string }>> {
     return this.apiClient.post<{ success: boolean; message: string }>('/auth/change-password', {
       currentPassword,
       newPassword

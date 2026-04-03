@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using AvatarAI.Application.Commands;
+using AvatarAI.Application.Queries;
 using AvatarAI.Application.DTOs;
 
 namespace AvatarAI.Api.Controllers;
@@ -25,13 +26,18 @@ public class GenerationTasksController : ControllerBase
     {
         try
         {
-            _logger.LogInformation("Creating generation task for avatar {AvatarId} with text length: {TextLength}", 
-                request.AvatarId, request.SpeechText?.Length ?? 0);
+            _logger.LogInformation("Creating generation task for avatar {AvatarId} with text length: {TextLength} and settings: {Settings}", 
+                request.AvatarId, request.SpeechText?.Length ?? 0, 
+                new { request.VoiceStyle, request.VideoLength, request.Resolution, request.Background });
             
             var command = new CreateGenerationTaskCommand(
                 request.AvatarId, 
                 request.SpeechText ?? string.Empty, 
-                request.ActionPrompt);
+                request.ActionPrompt,
+                request.VoiceStyle,
+                request.VideoLength,
+                request.Resolution,
+                request.Background);
             
             var result = await _mediator.Send(command);
             
@@ -52,98 +58,207 @@ public class GenerationTasksController : ControllerBase
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(GenerationTaskDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public Task<IActionResult> GetGenerationTask(Guid id)
+    public async Task<IActionResult> GetGenerationTask(Guid id)
     {
-        // In real implementation, we would query task from database
-        // For MVP, we'll simulate a response
-        var task = new GenerationTaskDto
+        try
         {
-            Id = id,
-            AvatarId = Guid.NewGuid(),
-            SpeechText = "Привет, это тестовый текст для генерации видео.",
-            Status = Domain.Enums.TaskStatus.Completed,
-            OutputPath = $"/data/output/final_{id}.mp4",
-            CreatedAt = DateTime.UtcNow.AddMinutes(-10),
-            UpdatedAt = DateTime.UtcNow.AddMinutes(-1),
-            CompletedAt = DateTime.UtcNow.AddMinutes(-1),
-            TaskLogs = new List<TaskLogDto>
+            _logger.LogInformation("Getting generation task with ID {TaskId}", id);
+            
+            var query = new GetGenerationTaskByIdQuery(id);
+            var task = await _mediator.Send(query);
+            
+            if (task == null)
             {
-                new() { Stage = Domain.Enums.TaskStage.AudioPreprocessing, Message = "Audio preprocessing started", CreatedAt = DateTime.UtcNow.AddMinutes(-9) },
-                new() { Stage = Domain.Enums.TaskStage.VoiceCloning, Message = "Voice cloning completed", CreatedAt = DateTime.UtcNow.AddMinutes(-7) },
-                new() { Stage = Domain.Enums.TaskStage.MediaAnalysis, Message = "Media analysis successful", CreatedAt = DateTime.UtcNow.AddMinutes(-5) },
-                new() { Stage = Domain.Enums.TaskStage.Lipsync, Message = "Lipsync applied", CreatedAt = DateTime.UtcNow.AddMinutes(-3) },
-                new() { Stage = Domain.Enums.TaskStage.Completed, Message = "Generation task completed successfully", CreatedAt = DateTime.UtcNow.AddMinutes(-1) }
+                _logger.LogWarning("Generation task with ID {TaskId} not found", id);
+                return NotFound(new { error = $"Generation task with ID {id} not found" });
             }
-        };
-        
-        return Task.FromResult<IActionResult>(Ok(task));
+            
+            return Ok(task);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting generation task with ID {TaskId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(List<GenerationTaskDto>), StatusCodes.Status200OK)]
-    public Task<IActionResult> GetGenerationTasks([FromQuery] Guid? avatarId = null)
+    [ProducesResponseType(typeof(IEnumerable<GenerationTaskDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetGenerationTasks([FromQuery] Guid? avatarId = null, [FromQuery] Guid? userId = null)
     {
-        // In real implementation, we would query tasks from database
-        // For MVP, we'll return simulated data
-        var tasks = new List<GenerationTaskDto>
+        try
         {
-            new()
-            {
-                Id = Guid.NewGuid(),
-                AvatarId = avatarId ?? Guid.NewGuid(),
-                SpeechText = "Добро пожаловать в AvatarAI!",
-                Status = Domain.Enums.TaskStatus.Completed,
-                OutputPath = "/data/output/final_1.mp4",
-                CreatedAt = DateTime.UtcNow.AddHours(-2),
-                UpdatedAt = DateTime.UtcNow.AddHours(-1),
-                CompletedAt = DateTime.UtcNow.AddHours(-1)
-            },
-            new()
-            {
-                Id = Guid.NewGuid(),
-                AvatarId = avatarId ?? Guid.NewGuid(),
-                SpeechText = "Это демонстрация технологии синтеза речи и видео.",
-                Status = Domain.Enums.TaskStatus.Processing,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-30),
-                UpdatedAt = DateTime.UtcNow.AddMinutes(-5)
-            },
-            new()
-            {
-                Id = Guid.NewGuid(),
-                AvatarId = avatarId ?? Guid.NewGuid(),
-                SpeechText = "Следующее поколение цифровых аватаров уже здесь.",
-                Status = Domain.Enums.TaskStatus.Pending,
-                CreatedAt = DateTime.UtcNow.AddMinutes(-10),
-                UpdatedAt = DateTime.UtcNow.AddMinutes(-10)
-            }
-        };
-        
-        return Task.FromResult<IActionResult>(Ok(tasks));
+            _logger.LogInformation("Getting generation tasks for avatar {AvatarId}, user {UserId}", avatarId, userId);
+            
+            var query = new GetGenerationTasksQuery(avatarId, userId);
+            var tasks = await _mediator.Send(query);
+            
+            return Ok(tasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting generation tasks for avatar {AvatarId}, user {UserId}", avatarId, userId);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
     }
 
     [HttpGet("{id:guid}/progress")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public Task<IActionResult> GetTaskProgress(Guid id)
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetTaskProgress(Guid id)
     {
-        // In real implementation, this would be Server-Sent Events (SSE) or WebSocket
-        // For MVP, we'll return current progress
-        var progress = new
+        try
         {
-            TaskId = id,
-            Status = "processing",
-            Progress = 60,
-            CurrentStage = "lipsync",
-            EstimatedTimeRemaining = "45 seconds",
-            Logs = new[]
+            _logger.LogInformation("Getting progress for task {TaskId}", id);
+            
+            var query = new GetGenerationTaskByIdQuery(id);
+            var task = await _mediator.Send(query);
+            
+            if (task == null)
             {
-                new { Timestamp = DateTime.UtcNow.AddMinutes(-4), Message = "Audio preprocessing completed" },
-                new { Timestamp = DateTime.UtcNow.AddMinutes(-3), Message = "Voice cloning in progress" },
-                new { Timestamp = DateTime.UtcNow.AddMinutes(-2), Message = "Media analysis started" },
-                new { Timestamp = DateTime.UtcNow.AddMinutes(-1), Message = "Applying lipsync to video" }
+                _logger.LogWarning("Generation task with ID {TaskId} not found", id);
+                return NotFound(new { error = $"Generation task with ID {id} not found" });
             }
+            
+            var progress = new
+            {
+                TaskId = task.Id,
+                Status = task.Status.ToString(),
+                Progress = task.Progress * 100,
+                CurrentStage = task.Stage.ToString(),
+                EstimatedTimeRemaining = CalculateEstimatedTimeRemaining(task),
+                Logs = task.TaskLogs?.Select(log => new 
+                { 
+                    Timestamp = log.CreatedAt, 
+                    Stage = log.Stage.ToString(),
+                    Message = log.Message 
+                }).OrderByDescending(log => log.Timestamp).Take(10)
+            };
+            
+            return Ok(progress);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting progress for task {TaskId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CancelTask(Guid id)
+    {
+        try
+        {
+            _logger.LogInformation("Cancelling generation task with ID {TaskId}", id);
+            
+            var command = new CancelGenerationTaskCommand(id);
+            await _mediator.Send(command);
+            
+            return Ok(new { message = "Task cancelled successfully", taskId = id });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Bad request for cancelling task");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Generation task with ID {TaskId} not found", id);
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelling generation task with ID {TaskId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
+    }
+
+    [HttpPost("{id:guid}/retry")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RetryTask(Guid id)
+    {
+        try
+        {
+            _logger.LogInformation("Retrying generation task with ID {TaskId}", id);
+            
+            var command = new RetryGenerationTaskCommand(id);
+            await _mediator.Send(command);
+            
+            return Ok(new { message = "Task retry initiated successfully", taskId = id });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Bad request for retrying task");
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Generation task with ID {TaskId} not found", id);
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrying generation task with ID {TaskId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTask(Guid id)
+    {
+        try
+        {
+            _logger.LogInformation("Deleting generation task with ID {TaskId}", id);
+            
+            var command = new DeleteGenerationTaskCommand(id);
+            await _mediator.Send(command);
+            
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Generation task with ID {TaskId} not found", id);
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting generation task with ID {TaskId}", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Internal server error" });
+        }
+    }
+
+    private string? CalculateEstimatedTimeRemaining(GenerationTaskDto task)
+    {
+        if (task.Status == Domain.Enums.TaskStatus.Completed || task.Status == Domain.Enums.TaskStatus.Failed)
+        {
+            return null;
+        }
+
+        // Simple estimation based on stage
+        var stageWeights = new Dictionary<Domain.Enums.TaskStage, int>
+        {
+            { Domain.Enums.TaskStage.AudioPreprocessing, 10 },
+            { Domain.Enums.TaskStage.VoiceCloning, 25 },
+            { Domain.Enums.TaskStage.MediaAnalysis, 15 },
+            { Domain.Enums.TaskStage.Lipsync, 30 },
+            { Domain.Enums.TaskStage.VideoRendering, 15 },
+            { Domain.Enums.TaskStage.PostProcessing, 5 }
         };
-        
-        return Task.FromResult<IActionResult>(Ok(progress));
+
+        if (stageWeights.TryGetValue(task.Stage, out var weight))
+        {
+            var estimatedSeconds = weight * 2; // 2 seconds per weight unit
+            return $"{estimatedSeconds} seconds";
+        }
+
+        return "Unknown";
     }
 }
 
@@ -152,4 +267,8 @@ public class CreateGenerationTaskRequest
     public Guid AvatarId { get; set; }
     public string? SpeechText { get; set; }
     public string? ActionPrompt { get; set; }
+    public string? VoiceStyle { get; set; }
+    public string? VideoLength { get; set; }
+    public string? Resolution { get; set; }
+    public string? Background { get; set; }
 }

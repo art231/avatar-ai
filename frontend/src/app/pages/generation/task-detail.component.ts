@@ -93,10 +93,10 @@ import { Subscription } from 'rxjs';
           <div class="progress-section" *ngIf="generationTaskService.isTaskActive(task)">
             <div class="progress-info">
               <span class="progress-label">Progress</span>
-              <span class="progress-value">{{ task.progress }}%</span>
+              <span class="progress-value">{{ getProgressPercentage() }}%</span>
             </div>
             <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="task.progress"></div>
+              <div class="progress-fill" [style.width.%]="getProgressPercentage()"></div>
             </div>
             <div class="stage-info" *ngIf="task.stage">
               <span class="stage-label">Current Stage:</span>
@@ -137,41 +137,41 @@ import { Subscription } from 'rxjs';
             <h3 class="detail-title">Text Content</h3>
             <div class="detail-content">
               <div class="text-content">
-                {{ task.text }}
+                {{ task.speechText }}
               </div>
               <div class="text-stats">
                 <div class="stat">
                   <span class="stat-label">Characters:</span>
-                  <span class="stat-value">{{ task.text.length }}</span>
+                  <span class="stat-value">{{ task.speechText.length }}</span>
                 </div>
                 <div class="stat">
                   <span class="stat-label">Words:</span>
-                  <span class="stat-value">{{ countWords(task.text) }}</span>
+                  <span class="stat-value">{{ countWords(task.speechText) }}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Generation Settings -->
-          <div class="detail-card" *ngIf="task.settings">
+          <div class="detail-card" *ngIf="task.voiceStyle || task.videoLength || task.resolution || task.background">
             <h3 class="detail-title">Generation Settings</h3>
             <div class="detail-content">
               <div class="settings-grid">
-                <div class="setting-item" *ngIf="task.settings.voiceStyle">
+                <div class="setting-item" *ngIf="task.voiceStyle">
                   <span class="setting-label">Voice Style:</span>
-                  <span class="setting-value">{{ task.settings.voiceStyle }}</span>
+                  <span class="setting-value">{{ task.voiceStyle }}</span>
                 </div>
-                <div class="setting-item" *ngIf="task.settings.videoLength">
+                <div class="setting-item" *ngIf="task.videoLength">
                   <span class="setting-label">Video Length:</span>
-                  <span class="setting-value">{{ task.settings.videoLength }}</span>
+                  <span class="setting-value">{{ task.videoLength }}</span>
                 </div>
-                <div class="setting-item" *ngIf="task.settings.resolution">
+                <div class="setting-item" *ngIf="task.resolution">
                   <span class="setting-label">Resolution:</span>
-                  <span class="setting-value">{{ task.settings.resolution }}</span>
+                  <span class="setting-value">{{ task.resolution }}</span>
                 </div>
-                <div class="setting-item" *ngIf="task.settings.background">
+                <div class="setting-item" *ngIf="task.background">
                   <span class="setting-label">Background:</span>
-                  <span class="setting-value">{{ task.settings.background }}</span>
+                  <span class="setting-value">{{ task.background }}</span>
                 </div>
               </div>
             </div>
@@ -794,6 +794,12 @@ export class TaskDetailComponent implements OnInit, OnDestroy {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  getProgressPercentage(): number {
+    if (!this.task) return 0;
+    // Progress is stored as decimal (0-1) in backend, convert to percentage (0-100)
+    return Math.round(this.task.progress * 100);
   }
 
   copyVideoUrl(): void {

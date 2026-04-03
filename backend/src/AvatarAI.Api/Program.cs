@@ -11,6 +11,7 @@ using Hangfire.Dashboard;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -116,6 +117,9 @@ builder.Services.AddHangfireServer();
 
 // Register repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAvatarRepository, AvatarRepository>();
+builder.Services.AddScoped<IGenerationTaskRepository, GenerationTaskRepository>();
+builder.Services.AddScoped<ITaskLogRepository, TaskLogRepository>();
 
 // Register application services
 builder.Services.AddScoped<IAIServiceClient, AIServiceClient>();
@@ -124,6 +128,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
 // Add MediatR
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
@@ -151,6 +156,19 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+
+// Serve static files from uploads directory
+var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/files"
+});
+
 app.UseAuthorization();
 app.MapControllers();
 

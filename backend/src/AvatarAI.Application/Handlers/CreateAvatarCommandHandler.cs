@@ -10,11 +10,16 @@ namespace AvatarAI.Application.Handlers;
 public class CreateAvatarCommandHandler : IRequestHandler<CreateAvatarCommand, AvatarDto>
 {
     private readonly IUserRepository _userRepository;
+    private readonly IAvatarRepository _avatarRepository;
     private readonly IMapper _mapper;
 
-    public CreateAvatarCommandHandler(IUserRepository userRepository, IMapper mapper)
+    public CreateAvatarCommandHandler(
+        IUserRepository userRepository, 
+        IAvatarRepository avatarRepository,
+        IMapper mapper)
     {
         _userRepository = userRepository;
+        _avatarRepository = avatarRepository;
         _mapper = mapper;
     }
 
@@ -27,11 +32,20 @@ public class CreateAvatarCommandHandler : IRequestHandler<CreateAvatarCommand, A
             throw new ArgumentException($"User with ID {request.UserId} not found");
         }
 
+        // Check if avatar name already exists for this user
+        var existingAvatar = await _avatarRepository.GetByUserIdAsync(request.UserId, cancellationToken);
+        if (existingAvatar.Any(a => a.Name.Equals(request.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException($"Avatar with name '{request.Name}' already exists for this user");
+        }
+
         // Create avatar
         var avatar = new Avatar(request.UserId, request.Name);
         
-        // In real implementation, we would save to database
-        // For now, we'll just map to DTO
+        // Save to database
+        await _avatarRepository.AddAsync(avatar, cancellationToken);
+        
+        // Map to DTO
         var avatarDto = _mapper.Map<AvatarDto>(avatar);
         
         return avatarDto;

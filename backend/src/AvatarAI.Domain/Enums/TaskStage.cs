@@ -9,11 +9,12 @@ public enum TaskStage
     VideoRendering = 4,
     PostProcessing = 5,
     Completed = 6,
+    Failed = 7,
     
     // Training pipeline stages
-    DataPreparation = 7,
-    FaceAnalysis = 8,
-    VoiceAnalysis = 9,
-    ModelTraining = 10,
-    ModelValidation = 11
+    DataPreparation = 8,
+    FaceAnalysis = 9,
+    VoiceAnalysis = 10,
+    ModelTraining = 11,
+    ModelValidation = 12
 }

@@ -21,7 +21,8 @@ public class MappingProfile : Profile
         
         // GenerationTask mappings
         CreateMap<GenerationTask, GenerationTaskDto>()
-            .ForMember(dest => dest.TaskLogs, opt => opt.MapFrom(src => src.TaskLogs));
+            .ForMember(dest => dest.TaskLogs, opt => opt.MapFrom(src => src.TaskLogs))
+            .ForMember(dest => dest.Metadata, opt => opt.MapFrom(src => src.Metadata));
         
         // TaskLog mappings
         CreateMap<TaskLog, TaskLogDto>();

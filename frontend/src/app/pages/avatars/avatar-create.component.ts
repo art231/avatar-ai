@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AvatarService, CreateAvatarRequest } from '../../../application/services/avatar.service';
+import { AuthService } from '../../../application/services/auth.service';
 import { ImageUploadComponent } from '../../../ui/components/image-upload.component';
 import { AudioUploadComponent } from '../../../ui/components/audio-upload.component';
 import { catchError, finalize } from 'rxjs/operators';
@@ -343,6 +344,7 @@ import { of } from 'rxjs';
 })
 export class AvatarCreateComponent implements OnInit {
   avatarData: CreateAvatarRequest = {
+    userId: '',
     name: '',
     description: '',
     images: [],
@@ -357,11 +359,16 @@ export class AvatarCreateComponent implements OnInit {
 
   constructor(
     private avatarService: AvatarService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
   ngOnInit() {
-    // Инициализация компонента
+    // Устанавливаем userId из текущего пользователя
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      this.avatarData.userId = currentUser.id;
+    }
   }
 
   onImagesChange(images: File[]) {
@@ -376,6 +383,16 @@ export class AvatarCreateComponent implements OnInit {
 
   onSubmit() {
     this.showValidation = true;
+    
+    // Проверка авторизации пользователя
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.error = 'Для создания аватара необходимо авторизоваться';
+      return;
+    }
+    
+    // Устанавливаем userId из текущего пользователя
+    this.avatarData.userId = currentUser.id;
     
     // Проверка валидности формы
     if (!this.avatarData.name || this.selectedImages.length < 5) {

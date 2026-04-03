@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AvatarAI - MVP Test Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .progress {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #007bff;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 AvatarAI MVP Test</h1>
+        <p>Upload a photo and audio sample to generate a talking avatar.</p>
+        
+        <div class="form-group">
+            <label for="photo">Photo (JPG/PNG):</label>
+            <input type="file" id="photo" accept="image/*">
+        </div>
+        
+        <div class="form-group">
+            <label for="audio">Audio Sample (WAV/MP3, 5-30s):</label>
+            <input type="file" id="audio" accept="audio/*">
+        </div>
+        
+        <div class="form-group">
+            <label for="text">Text to Speak:</label>
+            <textarea id="text" rows="3">Hello! I am your AI avatar. This is a test of the AvatarAI system.</textarea>
+        </div>
+        
+        <button id="generate-btn" onclick="generateAvatar()">Generate Avatar Video</button>
+        
+        <div class="progress" id="progress" style="display: none;">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:5000';
+        let currentTaskId = null;
+
+        async function generateAvatar() {
+            const photoFile = document.getElementById('photo').files[0];
+            const audioFile = document.getElementById('audio').files[0];
+            const text = document.getElementById('text').value;
+
+            if (!photoFile || !audioFile || !text) {
+                showStatus('Please fill all fields', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('generate-btn');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            const progress = document.getElementById('progress');
+            progress.style.display = 'block';
+            updateProgress(10);
+
+            try {
+                const formData = new FormData();
+                formData.append('photo', photoFile);
+                formData.append('audio', audioFile);
+                formData.append('text', text);
+
+                const response = await fetch(`${BACKEND_URL}/api/avatars/generate`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const data = await response.json();
+                currentTaskId = data.id;
+                
+                showStatus(`Task created: ${currentTaskId}`, 'success');
+                updateProgress(50);
+                
+                // Start checking status
+                checkTaskStatus();
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                btn.disabled = false;
+                btn.textContent = 'Generate Avatar Video';
+            }
+        }
+
+        async function checkTaskStatus() {
+            if (!currentTaskId) return;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/generation-tasks/${currentTaskId}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const task = await response.json();
+                
+                if (task.status === 'Processing') {
+                    updateProgress(70);
+                    setTimeout(checkTaskStatus, 2000);
+                } else if (task.status === 'Completed') {
+                    updateProgress(100);
+                    showStatus('Task completed successfully!', 'success');
+                    if (task.outputPath) {
+                        showResult(task.outputPath);
+                    }
+                } else if (task.status === 'Failed') {
+                    showStatus(`Task failed: ${task.errorMessage || 'Unknown error'}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('Status check error:', error);
+                setTimeout(checkTaskStatus, 2000);
+            }
+        }
+
+        function updateProgress(percent) {
+            document.getElementById('progress-bar').style.width = `${percent}%`;
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        function showResult(videoPath) {
+            const result = document.getElementById('result');
+            const videoUrl = `${BACKEND_URL}${videoPath}`;
+            result.innerHTML = `
+                <h3>Generated Video:</h3>
+                <video controls width="100%">
+                    <source src="${videoUrl}" type="video/mp4">
+                </video>
+                <p><a href="${videoUrl}" download>Download Video</a></p>
+            `;
+            
+            const btn = document.getElementById('generate-btn');
+            btn.disabled = false;
+            btn.textContent = 'Generate Avatar Video';
+        }
+    </script>
+</body>
+</html>

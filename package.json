@@ -1,0 +1,10 @@
+{
+  "name": "avatar-ai-root",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [],
+  "scripts": {
+    "frontend:install": "cd frontend && npm install",
+    "frontend:build": "cd frontend && npm run build"
+  }
+}

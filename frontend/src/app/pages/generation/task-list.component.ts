@@ -1,13 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { GenerationTaskService, GenerationTask } from '../../../application/services/generation-task.service';
 import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   template: `
     <div class="task-list-container">
       <div class="page-header">
@@ -78,7 +79,7 @@ import { Subscription } from 'rxjs';
           </div>
           
           <div class="table-cell text-cell">
-            <div class="task-text">{{ task.text.substring(0, 100) }}{{ task.text.length > 100 ? '...' : '' }}</div>
+            <div class="task-text">{{ task.speechText.substring(0, 100) }}{{ task.speechText.length > 100 ? '...' : '' }}</div>
           </div>
           
           <div class="table-cell">
@@ -90,12 +91,12 @@ import { Subscription } from 'rxjs';
           <div class="table-cell">
             <div *ngIf="generationTaskService.isTaskActive(task)" class="progress-container">
               <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="task.progress"></div>
+                <div class="progress-fill" [style.width.%]="task.progress * 100"></div>
               </div>
-              <span class="progress-text">{{ task.progress }}%</span>
+              <span class="progress-text">{{ (task.progress * 100).toFixed(0) }}%</span>
             </div>
             <div *ngIf="!generationTaskService.isTaskActive(task)" class="progress-text">
-              {{ task.progress }}%
+              {{ (task.progress * 100).toFixed(0) }}%
             </div>
           </div>
           
@@ -162,7 +163,7 @@ import { Subscription } from 'rxjs';
       </div>
     </div>
   `,
-  styles: [`
+  styles: `
     .task-list-container {
       max-width: 1400px;
       margin: 0 auto;
@@ -552,7 +553,7 @@ import { Subscription } from 'rxjs';
         justify-content: center;
       }
     }
-  `]
+  `
 })
 export class TaskListComponent implements OnInit, OnDestroy {
   allTasks: GenerationTask[] = [];
@@ -618,8 +619,8 @@ export class TaskListComponent implements OnInit, OnDestroy {
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase();
       filtered = filtered.filter(task =>
-        task.text.toLowerCase().includes(query) ||
-        task.avatarName.toLowerCase().includes(query) ||
+        (task.speechText?.toLowerCase() || '').includes(query) ||
+        (task.avatarName?.toLowerCase() || '').includes(query) ||
         task.status.toLowerCase().includes(query)
       );
     }
@@ -684,4 +685,3 @@ export class TaskListComponent implements OnInit, OnDestroy {
     }
   }
 }
-     

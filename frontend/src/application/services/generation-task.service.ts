@@ -3,30 +3,70 @@ import { Observable, Subject, interval, merge, of } from 'rxjs';
 import { map, switchMap, takeUntil, catchError, startWith, distinctUntilChanged, shareReplay } from 'rxjs/operators';
 import { ApiClientService, ApiResponse } from '../../infrastructure/api/api-client.service';
 
+export interface TaskLog {
+  id: string;
+  taskId: string;
+  stage: TaskStage;
+  message: string;
+  createdAt: string;
+}
+
+export enum TaskStage {
+  AudioPreprocessing = 'AudioPreprocessing',
+  VoiceCloning = 'VoiceCloning',
+  MediaAnalysis = 'MediaAnalysis',
+  Lipsync = 'Lipsync',
+  VideoRendering = 'VideoRendering',
+  PostProcessing = 'PostProcessing',
+  Completed = 'Completed',
+  Failed = 'Failed',
+  DataPreparation = 'DataPreparation',
+  FaceAnalysis = 'FaceAnalysis',
+  VoiceAnalysis = 'VoiceAnalysis',
+  ModelTraining = 'ModelTraining',
+  ModelValidation = 'ModelValidation'
+}
+
+export enum TaskStatus {
+  Pending = 'Pending',
+  Processing = 'Processing',
+  Completed = 'Completed',
+  Failed = 'Failed'
+}
+
 export interface GenerationTask {
   id: string;
   avatarId: string;
-  avatarName: string;
-  text: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  progress: number;
-  stage?: string;
+  userId: string;
+  speechText: string;
+  actionPrompt?: string;
+  status: TaskStatus;
+  stage: TaskStage;
+  progress: number; // 0-1 decimal
+  outputPath?: string;
+  errorMessage?: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  taskLogs: TaskLog[];
+  
+  // Настройки
+  voiceStyle?: string;
+  videoLength?: string;
+  resolution?: string;
+  background?: string;
+  
+  // Дополнительные поля для фронтенда
+  avatarName?: string;
   videoUrl?: string;
   audioUrl?: string;
-  errorMessage?: string;
-  createdAt: string;
-  completedAt?: string;
-  settings?: {
-    voiceStyle?: string;
-    videoLength?: string;
-    resolution?: string;
-    background?: string;
-  };
 }
 
 export interface CreateGenerationTaskRequest {
   avatarId: string;
-  text: string;
+  speechText?: string;
+  actionPrompt?: string;
   voiceStyle?: string;
   videoLength?: string;
   resolution?: string;
@@ -34,10 +74,16 @@ export interface CreateGenerationTaskRequest {
 }
 
 export interface TaskProgress {
-  progress: number;
+  taskId: string;
   status: string;
-  stage?: string;
-  estimatedTimeRemaining?: number;
+  progress: number; // 0-100 percentage
+  currentStage: string;
+  estimatedTimeRemaining?: string;
+  logs?: Array<{
+    timestamp: string;
+    stage: string;
+    message: string;
+  }>;
 }
 
 @Injectable({
@@ -45,7 +91,7 @@ export interface TaskProgress {
 })
 export class GenerationTaskService {
   private taskUpdates = new Subject<GenerationTask>();
-  private activeTasks = new Map<string, Observable<GenerationTask>>();
+  private activeTasks = new Map<string, Observable<GenerationTask | null>>();
 
   constructor(private apiClient: ApiClientService) {}
 
@@ -78,7 +124,7 @@ export class GenerationTaskService {
   }
 
   // Получение обновлений задачи в реальном времени
-  subscribeToTaskUpdates(id: string): Observable<GenerationTask> {
+  subscribeToTaskUpdates(id: string): Observable<GenerationTask | null> {
     if (!this.activeTasks.has(id)) {
       const taskObservable = interval(2000).pipe(
         startWith(0),
@@ -90,7 +136,7 @@ export class GenerationTaskService {
           prev?.status === curr?.status && prev?.progress === curr?.progress
         ),
         takeUntil(this.taskUpdates.pipe(
-          map(task => task.id === id && (task.status === 'completed' || task.status === 'failed'))
+          map(task => task.id === id && (task.status === TaskStatus.Completed || task.status === TaskStatus.Failed))
         )),
         shareReplay(1)
       );
@@ -122,7 +168,7 @@ export class GenerationTaskService {
   getActiveTasks(): Observable<GenerationTask[]> {
     return this.getTasks().pipe(
       map(response => response.data.filter(task => 
-        task.status === 'pending' || task.status === 'processing'
+        task.status === TaskStatus.Pending || task.status === TaskStatus.Processing
       ))
     );
   }
@@ -131,7 +177,7 @@ export class GenerationTaskService {
   getCompletedTasks(): Observable<GenerationTask[]> {
     return this.getTasks().pipe(
       map(response => response.data.filter(task => 
-        task.status === 'completed'
+        task.status === TaskStatus.Completed
       ))
     );
   }
@@ -157,33 +203,33 @@ export class GenerationTaskService {
 
   // Вспомогательные методы для статусов
   isTaskActive(task: GenerationTask): boolean {
-    return task.status === 'pending' || task.status === 'processing';
+    return task.status === TaskStatus.Pending || task.status === TaskStatus.Processing;
   }
 
   isTaskCompleted(task: GenerationTask): boolean {
-    return task.status === 'completed';
+    return task.status === TaskStatus.Completed;
   }
 
   isTaskFailed(task: GenerationTask): boolean {
-    return task.status === 'failed';
+    return task.status === TaskStatus.Failed;
   }
 
   getStatusColor(task: GenerationTask): string {
     switch (task.status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
+      case TaskStatus.Pending: return 'bg-yellow-100 text-yellow-800';
+      case TaskStatus.Processing: return 'bg-blue-100 text-blue-800';
+      case TaskStatus.Completed: return 'bg-green-100 text-green-800';
+      case TaskStatus.Failed: return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   }
 
   getStatusIcon(task: GenerationTask): string {
     switch (task.status) {
-      case 'pending': return '⏳';
-      case 'processing': return '⚡';
-      case 'completed': return '✅';
-      case 'failed': return '❌';
+      case TaskStatus.Pending: return '⏳';
+      case TaskStatus.Processing: return '⚡';
+      case TaskStatus.Completed: return '✅';
+      case TaskStatus.Failed: return '❌';
       default: return '❓';
     }
   }

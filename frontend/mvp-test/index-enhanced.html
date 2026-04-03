@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AvatarAI - MVP Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 30px;
+            border: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: #4f46e5;
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.1);
+        }
+
+        .card h2 {
+            color: #4f46e5;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .file-input {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input label {
+            display: block;
+            padding: 12px 16px;
+            background: #4f46e5;
+            color: white;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .file-input label:hover {
+            background: #4338ca;
+        }
+
+        .file-name {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #64748b;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+            display: block;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+            display: block;
+        }
+
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #3b82f6;
+            display: block;
+        }
+
+        .progress {
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            margin-top: 5px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .result {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .result video {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .result a {
+            display: inline-block;
+            margin-top: 10px;
+            color: #4f46e5;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .result a:hover {
+            text-decoration: underline;
+        }
+
+        .service-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-dot.healthy {
+            background: #10b981;
+        }
+
+        .status-dot.unhealthy {
+            background: #ef4444;
+        }
+
+        .status-dot.unknown {
+            background: #f59e0b;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 0.9rem;
+            border-top: 2px solid #e2e8f0;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 AvatarAI MVP</h1>
+            <p>Create realistic talking avatars from photos and audio samples</p>
+        </div>
+
+        <div class="content">
+            <div class="card">
+                <h2>📸 Upload Media</h2>
+                
+                <div class="service-status" id="backend-status">
+                    <div class="status-dot unknown"></div>
+                    <span>Backend API: Checking...</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="photo">Photo of Person</label>
+                    <div class="file-input">
+                        <input type="file" id="photo" accept="image/*">
+                        <label for="photo">Choose Photo (JPG, PNG)</label>
+                    </div>
+                    <div class="file-name" id="photo-name">No file selected</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="audio">Audio Sample (5-30 seconds)</label>
+                    <div class="file-input">
+                        <input type="file" id="audio" accept="audio/*">
+                        <label for="audio">Choose Audio (WAV, MP3)</label>
+                    </div>
+                    <div class="file-name" id="audio-name">No file selected</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="text">Text to Speak</label>
+                    <textarea id="text" placeholder="Enter the text you want the avatar to speak...">Hello! I am your AI avatar. This is a test of the AvatarAI system.</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">Lip Sync Model</label>
+                    <select id="model">
+                        <option value="wav2lip">Wav2Lip (Fast, Medium Quality)</option>
+                        <option value="musetalk">MuseTalk (Slow, High Quality)</option>
+                    </select>
+                </div>
+
+                <button class="btn" id="generate-btn" onclick="generateAvatar()">
+                    🚀 Generate Avatar Video
+                </button>
+
+                <div class="progress" id="progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">Starting...</div>
+                </div>
+
+                <div class="status" id="status"></div>
+            </div>
+
+            <div class="card">
+                <h2>🎬 Results</h2>
+                
+                <div class="result" id="result">
+                    <p>Your generated avatar video will appear here.</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="task-id">Task ID</label>
+                    <input type="text" id="task-id" readonly placeholder="Task ID will appear here after generation">
+                </div>
+
+                <button class="btn btn-secondary" onclick="checkStatus()" id="status-btn">
+                    🔄 Check Status
+                </button>
+
+                <button class="btn btn-secondary" onclick="downloadVideo()" id="download-btn" style="display: none;">
+                    📥 Download Video
+                </button>
+
+                <div class="status" id="result-status"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>AvatarAI MVP • Phase 1 & 2 Implementation • Backend API: <span id="backend-url">http://localhost:5000</span></p>
+            <p>Note: This is a test interface for the MVP pipeline. Actual AI processing may take several minutes.</p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const BACKEND_URL = 'http://localhost:5000';
+        let currentTaskId = null;
+        let checkInterval = null;
+
+        // Update backend URL display
+        document.getElementById('backend-url').textContent = BACKEND_URL;
+
+        // File input handlers
+        document.getElementById('photo').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'No file selected';
+            document.getElementById('photo-name').textContent = fileName;
+        });
+
+        document.getElementById('audio').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'No file selected';
+            document.getElementById('audio-name').textContent = fileName;
+        });
+
+        // Check backend health on load
+        async function checkBackendHealth() {
+            const statusElement = document.getElementById('backend-status');
+            const dot = statusElement.querySelector('.status-dot');
+            const text = statusElement.querySelector('span');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                if (response.ok) {
+                    dot.className = 'status-dot healthy';
+                    text.textContent = 'Backend API: Healthy';
+                } else {
+                    dot.className = 'status-dot unhealthy';
+                    text.textContent = 'Backend API: Unhealthy';
+                }
+            } catch (error) {
+                dot.className = 'status-dot unhealthy';
+                text.textContent = 'Backend API: Unreachable';
+            }
+        }
+
+        // Generate avatar video
+        async function generateAvatar() {
+            const photoFile = document.getElementById('photo').files[0];
+            const audioFile = document.getElementById('audio').files[0];
+            const text = document.getElementById('text').value;
+
+            if (!photoFile) {
+                showStatus('Please select a photo', 'error');
+                return;
+            }
+
+            if (!audioFile) {
+                showStatus('Please select an audio sample', 'error');
+                return;
+            }
+
+            if (!text.trim()) {
+                showStatus('Please enter text for the avatar to speak', 'error');
+                return;
+            }
+
+            // Disable button and show progress
+            const btn = document.getElementById('generate-btn');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            const progress = document.getElementById('progress');
+            progress.style.display = 'block';
+            updateProgress(10, 'Uploading files...');
+
+            try {
+                // Create form data
+                const formData = new FormData();
+                formData.append('photo', photoFile);
+                formData.append('audio', audioFile);
+                formData.append('text', text);
+
+                updateProgress(30, 'Sending to backend...');
+
+                // Send to backend
+                const response = await fetch(`${BACKEND_URL}/api/avatars/generate`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                currentTaskId = data.id;
+
+                updateProgress(50, 'Task created. Processing...');
+                showStatus(`Task created: ${currentTaskId}`, 'success');
+
+                // Update task ID field
+                document.getElementById('task-id').value = currentTaskId;
+
+                // Start checking status
+                startStatusCheck();
+
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                console.error('Generation error:', error);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🚀 Generate Avatar Video';
+            }
+        }
+
+        // Update progress bar
+        function updateProgress(percent, text) {
+            document.getElementById('progress-fill').style.width = `${percent}%`;
+            document.getElementById('progress-text').textContent = text;
+        }
+
+        // Show status message
+        function showStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        // Show result status
+        function showResultStatus(message, type = 'info') {
+            const statusElement = document.getElementById('result-status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        // Start checking task status
+        function startStatusCheck() {
+            if (checkInterval) {
+                clearInterval(checkInterval);
+            }
+
+            checkInterval = setInterval(checkStatus, 3000);
+            checkStatus(); // Check immediately
+        }
+
+        // Check task status
+        async function checkStatus() {
+            if (!currentTaskId) {
+                showResultStatus('No active task', 'info');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/generation-tasks/${currentTaskId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const task = await response.json();
+                
+                // Update progress based on task status
+                if (task.status === 'Processing') {
+                    updateProgress(70, 'Generating avatar...');
+                    showResultStatus('Task is processing...', 'info');
+                } else if (task.status === 'Completed') {
+                    updateProgress(100, 'Completed!');
+                    showResultStatus('Task completed successfully!', 'success');
+                    
+                    // Show video if available
+                    if (task.outputPath) {
+                        showVideoResult(task.outputPath);
+                    }
+                    
+                    // Stop checking
+                    clearInterval(checkInterval);
+                    checkInterval = null;
+                } else if (task.status === 'Failed') {
+                    updateProgress(0, 'Failed');
+                    showResultStatus(`Task failed: ${task.errorMessage || 'Unknown error'}`, 'error');
+                    
+                    // Stop checking
+                    clearInterval(checkInterval);
+                    checkInterval = null;
+                }
+
+            } catch (error) {
+                showResultStatus(`Error checking status: ${error.message}`, 'error');
+            }
+        }
+
+        // Show video result
+        function showVideoResult(videoPath) {
+            const resultElement = document.getElementById('result');
+            const videoUrl = `${BACKEND_URL}${videoPath}`;
+            
+            resultElement.innerHTML = `
+                <video controls autoplay>
+                    <source src="${videoUrl}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <a href="${videoUrl}" download>Download Video</a>
+            `;
+            
+            // Show download button
+            document.getElementById('download-btn').style.display = 'block';
