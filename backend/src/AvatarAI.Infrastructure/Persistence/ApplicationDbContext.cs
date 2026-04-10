@@ -79,6 +79,11 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.UpdatedAt).IsRequired();
             entity.Property(e => e.CompletedAt);
+            entity.Property(e => e.Metadata)
+                .HasConversion(new ValueConverter<Dictionary<string, object>, string>(
+                    v => JsonSerializer.Serialize(v, JsonSerializerOptions.Default),
+                    v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, JsonSerializerOptions.Default) ?? new Dictionary<string, object>()
+                ));
             
             entity.HasIndex(e => e.AvatarId);
             entity.HasIndex(e => e.Status);

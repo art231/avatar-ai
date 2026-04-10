@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GenerationTaskService, GenerationTask } from '../../../application/services/generation-task.service';
@@ -8,7 +9,7 @@ import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   template: `
     <div class="task-list-container">
       <div class="page-header">
@@ -167,63 +168,44 @@ import { Subscription } from 'rxjs';
     .task-list-container {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 2rem;
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .page-title {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin: 0;
-    }
-
-    .page-actions {
-      display: flex;
-      gap: 1rem;
+      padding: var(--spacing-2xl);
     }
 
     .filters {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
-      padding: 1rem;
-      background: #f9fafb;
-      border-radius: 8px;
+      margin-bottom: var(--spacing-xl);
+      padding: var(--spacing-md);
+      background: var(--color-bg-secondary);
+      border-radius: var(--radius-lg);
     }
 
     .filter-group {
       display: flex;
-      gap: 0.5rem;
+      gap: var(--spacing-sm);
     }
 
     .filter-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      background: white;
-      color: #4b5563;
-      font-size: 0.875rem;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--color-border-dark);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-primary);
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .filter-btn:hover {
-      border-color: #667eea;
-      color: #667eea;
+      border-color: var(--color-primary);
+      color: var(--color-primary);
     }
 
     .filter-btn.active {
-      background: #667eea;
-      border-color: #667eea;
-      color: white;
+      background: var(--gradient-primary);
+      border-color: var(--color-primary);
+      color: var(--color-text-white);
     }
 
     .search-box {
@@ -232,120 +214,41 @@ import { Subscription } from 'rxjs';
 
     .search-input {
       width: 100%;
-      padding: 0.5rem 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 0.875rem;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--color-border-dark);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      background: var(--color-bg-primary);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .search-input:focus {
       outline: none;
-      border-color: #667eea;
-    }
-
-    .loading-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem;
-      color: #6b7280;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #e5e7eb;
-      border-top-color: #667eea;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 4rem;
-      background: #f9fafb;
-      border-radius: 12px;
-    }
-
-    .empty-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-    }
-
-    .empty-state h3 {
-      font-size: 1.5rem;
-      color: #1f2937;
-      margin-bottom: 0.5rem;
-    }
-
-    .empty-state p {
-      color: #6b7280;
-      margin-bottom: 1.5rem;
-    }
-
-    .tasks-table {
-      background: white;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      margin-bottom: 2rem;
-    }
-
-    .table-header {
-      display: grid;
-      grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr;
-      padding: 1rem;
-      background: #f3f4f6;
-      font-weight: 600;
-      color: #374151;
-      border-bottom: 1px solid #e5e7eb;
-    }
-
-    .table-row {
-      display: grid;
-      grid-template-columns: 1fr 2fr 1fr 1fr 1fr 1fr;
-      padding: 1rem;
-      border-bottom: 1px solid #f3f4f6;
-      transition: background-color 0.2s;
-    }
-
-    .table-row:hover {
-      background: #f9fafb;
-    }
-
-    .table-cell {
-      display: flex;
-      align-items: center;
-      padding: 0.5rem;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
     }
 
     .avatar-info {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: var(--spacing-sm);
     }
 
     .avatar-icon {
       width: 32px;
       height: 32px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--gradient-primary);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-size: 1rem;
+      color: var(--color-text-white);
+      font-size: var(--font-size-base);
     }
 
     .avatar-name {
-      font-weight: 500;
-      color: #1f2937;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
     }
 
     .text-cell {
@@ -354,46 +257,8 @@ import { Subscription } from 'rxjs';
     }
 
     .task-text {
-      color: #4b5563;
+      color: var(--color-text-secondary);
       line-height: 1.4;
-    }
-
-    .status-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .progress-container {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      width: 100%;
-    }
-
-    .progress-bar {
-      flex: 1;
-      height: 6px;
-      background: #e5e7eb;
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      transition: width 0.3s;
-    }
-
-    .progress-text {
-      font-size: 0.75rem;
-      color: #6b7280;
-      min-width: 40px;
-      text-align: right;
     }
 
     .date-info {
@@ -402,54 +267,54 @@ import { Subscription } from 'rxjs';
     }
 
     .date {
-      font-weight: 500;
-      color: #1f2937;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
     }
 
     .time {
-      font-size: 0.75rem;
-      color: #6b7280;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
     }
 
     .action-buttons {
       display: flex;
-      gap: 0.25rem;
+      gap: var(--spacing-xs);
     }
 
     .pagination {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      padding: var(--spacing-md);
+      background: var(--color-bg-primary);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
     }
 
     .pagination-info {
-      color: #6b7280;
-      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
     }
 
     .pagination-controls {
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: var(--spacing-md);
     }
 
     .pagination-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      background: white;
-      color: #4b5563;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border: 1px solid var(--color-border-dark);
+      border-radius: var(--radius-md);
+      background: var(--color-bg-primary);
+      color: var(--color-text-secondary);
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .pagination-btn:hover:not(:disabled) {
-      border-color: #667eea;
-      color: #667eea;
+      border-color: var(--color-primary);
+      color: var(--color-primary);
     }
 
     .pagination-btn:disabled {
@@ -458,51 +323,12 @@ import { Subscription } from 'rxjs';
     }
 
     .pagination-page {
-      font-weight: 500;
-      color: #1f2937;
-    }
-
-    .btn {
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-weight: 500;
-      cursor: pointer;
-      border: none;
-      transition: all 0.2s;
-      font-size: 0.875rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-    }
-
-    .btn-outline {
-      background: transparent;
-      color: #667eea;
-      border: 1px solid #667eea;
-    }
-
-    .btn-outline:hover {
-      background: #667eea;
-      color: white;
-    }
-
-    .btn-sm {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.75rem;
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
     }
 
     .btn-icon {
-      font-size: 1rem;
+      font-size: var(--font-size-base);
     }
 
     @media (max-width: 1024px) {
@@ -520,18 +346,18 @@ import { Subscription } from 'rxjs';
 
     @media (max-width: 768px) {
       .task-list-container {
-        padding: 1rem;
+        padding: var(--spacing-md);
       }
       
       .page-header {
         flex-direction: column;
-        gap: 1rem;
+        gap: var(--spacing-md);
         text-align: center;
       }
       
       .filters {
         flex-direction: column;
-        gap: 1rem;
+        gap: var(--spacing-md);
       }
       
       .search-box {
@@ -542,7 +368,7 @@ import { Subscription } from 'rxjs';
       .table-header,
       .table-row {
         grid-template-columns: 1fr;
-        gap: 0.5rem;
+        gap: var(--spacing-sm);
       }
       
       .table-cell {

@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar AI - Интерактивная визуализация графа знаний</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        button, select {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover, select:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .main-content {
+            display: flex;
+            min-height: 800px;
+        }
+        
+        #graph-container {
+            flex: 1;
+            position: relative;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        #graph {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .sidebar {
+            width: 350px;
+            padding: 20px;
+            background: #f8f9fa;
+            overflow-y: auto;
+        }
+        
+        .entity-info {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .entity-info h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .entity-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .observations {
+            margin-top: 15px;
+        }
+        
+        .observation {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .relations {
+            margin-top: 15px;
+        }
+        
+        .relation {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #e9ecef;
+            border-radius: 6px;
+        }
+        
+        .relation-type {
+            background: #764ba2;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .legend h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 6px;
+            pointer-events: none;
+            font-size: 14px;
+            max-width: 300px;
+            z-index: 1000;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #666;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+            color: #667eea;
+        }
+        
+        /* Цвета для типов сущностей */
+        .project { background: #e1f5fe; border-color: #01579b; }
+        .tech_stack { background: #f3e5f5; border-color: #4a148c; }
+        .service { background: #e8f5e8; border-color: #1b5e20; }
+        .domain_entity { background: #fff3e0; border-color: #e65100; }
+        .frontend_component { background: #fce4ec; border-color: #880e4f; }
+        .ai_capability { background: #e0f2f1; border-color: #004d40; }
+        .workflow { background: #f3e5f5; border-color: #4a148c; }
+        .testing { background: #fff8e1; border-color: #ff6f00; }
+        .infrastructure { background: #e8eaf6; border-color: #283593; }
+        .deployment { background: #e8eaf6; border-color: #283593; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Avatar AI - Граф знаний проекта</h1>
+            <p class="subtitle">Интерактивная визуализация архитектуры и компонентов</p>
+        </header>
+        
+        <div class="controls">
+            <div class="control-group">
+                <button id="reset-view">Сбросить вид</button>
+                <button id="center-graph">Центрировать</button>
+                <button id="toggle-labels">Показать/скрыть метки</button>
+            </div>
+            
+            <div class="control-group">
+                <label for="filter-type">Фильтр по типу:</label>
+                <select id="filter-type">
+                    <option value="all">Все типы</option>
+                    <option value="project">Проект</option>
+                    <option value="tech_stack">Технологии</option>
+                    <option value="service">Сервисы</option>
+                    <option value="domain_entity">Доменные сущности</option>
+                    <option value="frontend_component">Frontend компоненты</option>
+                    <option value="ai_capability">AI возможности</option>
+                    <option value="workflow">Workflow процессы</option>
+                    <option value="testing">Тестирование</option>
+                    <option value="infrastructure">Инфраструктура</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="layout-type">Расположение:</label>
+                <select id="layout-type">
+                    <option value="force">Force-directed</option>
+                    <option value="tree">Дерево</option>
+                    <option value="radial">Радиальное</option>
+                    <option value="cluster">Кластерное</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div id="graph-container">
+                <div id="graph"></div>
+                <div class="loading" id="loading">Загрузка графа...</div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="entity-info" id="entity-info">
+                    <h3>Выберите элемент</h3>
+                    <p>Кликните на любой узел в графе, чтобы увидеть детальную информацию</p>
+                </div>
+                
+                <div class="legend">
+                    <h3>Легенда</h3>
+                    <div class="legend-item">
+                        <div class="legend-color project"></div>
+                        <span>Проект</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color tech_stack"></div>
+                        <span>Технологический стек</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color service"></div>
+                        <span>Сервисы</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color domain_entity"></div>
+                        <span>Доменные сущности</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color frontend_component"></div>
+                        <span>Frontend компоненты</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color ai_capability"></div>
+                        <span>AI возможности</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color workflow"></div>
+                        <span>Workflow процессы</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color testing"></div>
+                        <span>Тестирование</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color infrastructure"></div>
+                        <span>Инфраструктура</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Граф знаний проекта Avatar AI | Создано с использованием D3.js | Данные из MCP Knowledge Graph Memory</p>
+            <p>Последнее обновление: <span id="current-date"></span></p>
+        </footer>
+    </div>
+
+    <script>
+        // Установка текущей даты
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        // Данные графа
+        const graphData = {
+            nodes: [
+                // Проект
+                { id: "Project: Avatar AI", type: "project", group: 0 },
+                
+                // Технологический стек
+                { id: "TechStack: Frontend", type: "tech_stack", group: 1 },
+                { id: "TechStack: Backend", type: "tech_stack", group: 1 },
+                { id: "TechStack: AI Services", type: "tech_stack", group: 1 },
+                { id: "Architecture: Clean Architecture", type: "tech_stack", group: 1 },
+                
+                // Сервисы
+                { id: "Service: PostgreSQL", type: "service", group: 2 },
+                { id: "Service: Redis", type: "service", group: 2 },
+                { id: "Service: Backend API", type: "service", group: 2 },
+                { id: "Service: Frontend", type: "service", group: 2 },
+                { id: "Service: Audio Preprocessor", type: "service", group: 2 },
+                { id: "Service: XTTS Service", type: "service", group: 2 },
+                { id: "Service: Media Analyzer", type: "service", group: 2 },
+                { id: "Service: Lipsync Service", type: "service", group: 2 },
+                { id: "Service: LoRA Trainer", type: "service", group: 2 },
+                { id: "Service: Motion Generator", type: "service", group: 2 },
+                { id: "Service: Video Renderer", type: "service", group: 2 },
+                { id: "Service: Training Pipeline", type: "service", group: 2 },
+                
+                // Доменные сущности
+                { id: "Domain Entity: User", type: "domain_entity", group: 3 },
+                { id: "Domain Entity: Avatar", type: "domain_entity", group: 3 },
+                { id: "Domain Entity: GenerationTask", type: "domain_entity", group: 3 },
+                { id: "Domain Entity: TaskLog", type: "domain_entity", group: 3 },
+                
+                // AI возможности
+                { id: "AI Capability: Text-to-Speech", type: "ai_capability", group: 4 },
+                { id: "AI Capability: Lip Sync", type: "ai_capability", group: 4 },
+                { id: "AI Capability: LoRA Training", type: "ai_capability", group: 4 },
+                { id: "AI Capability: Motion Generation", type: "ai_capability", group: 4 },
+                { id: "AI Capability: Video Rendering", type: "ai_capability", group: 4 },
+                { id: "AI Capability: Media Analysis", type: "ai_capability", group: 4 },
+                { id: "AI Capability: Audio Processing", type: "ai_capability", group: 4 },
+                
+                // Workflow процессы
+                { id: "Workflow: Avatar Training", type: "workflow", group: 5 },
+                { id: "Workflow: Video Generation", type: "workflow", group: 5 },
+                { id: "Workflow: Data Processing", type: "workflow", group: 5 },
+                
+                // Тестирование
+                { id: "Testing: Unit Tests", type: "testing", group: 6 },
+                { id: "Testing: Integration Tests", type: "testing", group: 6 },
+                { id: "Testing: Frontend Tests", type: "testing", group: 6 },
+                
+                // Инфраструктура
+                { id: "Infrastructure: Docker", type: "infrastructure", group: 7 },
+                { id: "Infrastructure: Kubernetes", type: "infrastructure", group: 7 },
+                { id: "Deployment: Production", type: "deployment", group: 7 },
+                { id: "Deployment: Development", type: "deployment", group: 7 }
+            ],
+            
+            links: [
+                // Проект -> Технологии
+                { source: "Project: Avatar AI", target: "TechStack: Frontend", type: "uses" },
+                { source: "Project: Avatar AI", target: "TechStack: Backend", type: "uses" },
+                { source: "Project: Avatar AI", target: "TechStack: AI Services", type: "uses" },
+                { source: "Project: Avatar AI", target: "Architecture: Clean Architecture", type: "implements" },
+                
+                // Проект -> Сервисы
+                { source: "Project: Avatar AI", target: "Service: PostgreSQL", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Redis", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Backend API", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Frontend", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Audio Preprocessor", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: XTTS Service", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Media Analyzer", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Lipsync Service", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: LoRA Trainer", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Motion Generator", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Video Renderer", type: "uses" },
+                { source: "Project: Avatar AI", target: "Service: Training Pipeline", type: "uses" },
+                
+                // Зависимости между сервисами
+                { source: "Service: Backend API", target: "Service: PostgreSQL", type: "depends_on" },
+                { source: "Service: Backend API", target: "Service: Redis", type: "depends_on" },
+                { source: "Service: Frontend", target: "Service: Backend API", type: "depends_on" },
+                { source: "Service: Training Pipeline", target: "Service: Audio Preprocessor", type: "depends_on" },
+                { source: "Service: Training Pipeline", target: "Service: Media Analyzer", type: "depends_on" },
+                { source: "Service: Training Pipeline", target: "Service: XTTS Service", type: "depends_on" },
+                { source: "Service: Training Pipeline", target: "Service: LoRA Trainer", type: "depends_on" },
+                { source: "Service: Training Pipeline", target: "Service: Lipsync Service", type: "depends_on" },
+                { source: "Service: Video Renderer", target: "Service: LoRA Trainer", type: "depends_on" },
+                { source: "Service: Video Renderer", target: "Service: Redis", type: "depends_on" },
+                
+                // Доменные сущности
+                { source: "Service: Backend API", target: "Domain Entity: User", type: "manages" },
+                { source: "Service: Backend API", target: "Domain Entity: Avatar", type: "manages" },
+                { source: "Service: Backend API", target: "Domain Entity: GenerationTask", type: "manages" },
+                { source: "Service: Backend API", target: "Domain Entity: TaskLog", type: "manages" },
+                
+                { source: "Domain Entity: Avatar", target: "Domain Entity: User", type: "belongs_to" },
+                { source: "Domain Entity: GenerationTask", target: "Domain Entity: Avatar", type: "belongs_to" },
+                { source: "Domain Entity: TaskLog", target: "Domain Entity: GenerationTask", type: "belongs_to" },
+                
+                { source: "Service: PostgreSQL", target: "Domain Entity: User", type: "stores" },
+                { source: "Service: PostgreSQL", target: "Domain Entity: Avatar", type: "stores" },
+                { source: "Service: PostgreSQL", target: "Domain Entity: GenerationTask", type: "stores" },
+                { source: "Service: PostgreSQL", target: "Domain Entity: TaskLog", type: "stores" },
+                
+                // AI возможности
+                { source: "Service: XTTS Service", target: "AI Capability: Text-to-Speech", type: "provides" },
+                { source: "Service: Lipsync Service", target: "AI Capability: Lip Sync", type: "provides" },
+                { source: "Service: LoRA Trainer", target: "AI Capability: LoRA Training", type: "provides" },
+                { source: "Service: Motion Generator", target: "AI Capability: Motion Generation", type: "provides" },
+                { source: "Service: Video Renderer", target: "AI Capability: Video Rendering", type: "provides" },
+                { source: "Service: Media Analyzer", target: "AI Capability: Media Analysis", type: "provides" },
+                { source: "Service: Audio Preprocessor", target: "AI Capability: Audio Processing", type: "provides" },
+                
+                { source: "Service: Training Pipeline", target: "AI Capability: LoRA Training", type: "orchestrates" },
+                { source: "Service: Training Pipeline", target: "AI Capability: Text-to-Speech", type: "orchestrates" },
+                { source: "Service: Training Pipeline", target: "AI Capability: Lip Sync", type: "orchestrates" },
+                { source: "Service: Training Pipeline", target: "AI Capability: Audio Processing", type: "orchestrates" },
+                { source: "Service: Training Pipeline", target: "AI Capability: Media Analysis", type: "orchestrates" },
+                
+                // Workflow процессы
+                { source: "Project: Avatar AI", target: "Workflow: Avatar Training", type: "implements" },
+                { source: "Project: Avatar AI", target: "Workflow: Video Generation", type: "implements" },
+                { source: "Project: Avatar AI", target: "Workflow: Data Processing", type: "implements" },
+                
+                { source: "Workflow: Avatar Training", target: "Service: Training Pipeline", type: "executed_by" },
+                { source: "Workflow: Video Generation", target: "Service: Backend API", type: "orchestrated_by" },
+                { source: "Workflow: Data Processing", target: "Service: Audio Preprocessor", type: "uses" },
+                { source: "Workflow: Data Processing", target: "Service: Media Analyzer", type: "uses" },
+                
+                { source: "Workflow: Avatar Training", target: "AI Capability: LoRA Training", type: "requires" },
+                { source: "Workflow: Avatar Training", target: "AI Capability: Text-to-Speech", type: "requires" },
+                { source: "Workflow: Avatar Training", target: "AI Capability: Audio Processing", type: "requires" },
+                { source: "Workflow: Avatar Training", target: "AI Capability: Media Analysis", type: "requires" },
+                
+                { source: "Workflow: Video Generation", target: "AI Capability: Text-to-Speech", type: "requires" },
+                { source: "Workflow: Video Generation", target: "AI Capability: Lip Sync", type: "requires" },
+                { source: "Workflow: Video Generation", target: "AI Capability: Motion Generation", type: "requires" },
+                { source: "Workflow: Video Generation", target: "AI Capability: Video Rendering", type: "requires" },
+                
+                // Тестирование
+                { source: "Project: Avatar AI", target: "Testing: Unit Tests", type: "includes" },
+                { source: "Project: Avatar AI", target: "Testing: Integration Tests", type: "includes" },
+                { source: "Project: Avatar AI", target: "Testing: Frontend Tests", type: "includes" },
+                
+                { source: "Testing: Unit Tests", target: "Service: Backend API", type: "tests" },
+                { source: "Testing: Integration Tests", target: "Service: PostgreSQL", type: "tests" },
+                { source: "Testing: Integration Tests", target: "Service: Backend API", type: "tests" },
+                { source: "Testing: Frontend Tests", target: "Service: Frontend", type: "tests" },
+                
+                // Инфраструктура
+                { source: "Project: Avatar AI", target: "Infrastructure: Docker", type: "uses" },
+                { source: "Project: Avatar AI", target: "Infrastructure: Kubernetes", type: "supports" },
+                { source: "Project: Avatar AI", target: "Deployment: Production", type: "supports" },
+                { source: "Project: Avatar AI", target: "Deployment: Development", type: "supports" },
+                
+                { source: "Infrastructure: Docker", target: "Service: PostgreSQL", type: "containerizes" },
+                { source: "Infrastructure: Docker", target: "Service: Redis", type: "containerizes" },
+                { source: "Infrastructure: Docker", target: "Service: Backend API", type: "containerizes" },
+                { source: "Infrastructure: Docker", target: "Service: Frontend", type: "containerizes" },
+                { source: "Infrastructure: Docker", target: "Service: XTTS Service", type: "containerizes" },
+                { source: "Infrastructure: Docker", target: "Service: Lipsync Service", type: "containerizes" },
+                { source: "Infrastructure: Docker", target: "Service: LoRA Trainer", type: "containerizes" },
+                { source: "Infrastructure: Docker", target: "Service: Video Renderer", type: "containerizes" }
+            ]
+        };
+
+        // Инициализация D3.js графа
+        const width = document.getElementById('graph-container').offsetWidth;
+        const height = document.getElementById('graph-container').offsetHeight;
+
+        const svg = d3.select('#graph')
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        const g = svg.append('g');
+
+        // Создание симуляции
+        const simulation = d3.forceSimulation(graphData.nodes)
+            .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(100))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collision', d3.forceCollide().radius(50));
+
+        // Создание линий
+        const link = g.append('g')
+            .attr('class', 'links')
+            .selectAll('line')
+            .data(graphData.links)
+            .enter()
+            .append('line')
+            .attr('stroke-width', 2)
+            .attr('stroke', '#999')
+            .attr('stroke-opacity', 0.6);
+
+        // Создание узлов
+        const node = g.append('g')
+            .attr('class', 'nodes')
+            .selectAll('g')
+            .data(graphData.nodes)
+            .enter()
+            .append('g')
+            .call(d3.drag()
+                .on('start', dragstarted)
+                .on('drag', dragged)
+                .on('end', dragended));
+
+        // Добавление кругов для узлов
+        node.append('circle')
+            .attr('r', 20)
+            .attr('fill', d => getNodeColor(d.type))
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 2);
+
+        // Добавление текста для узлов
+        node.append('text')
+            .text(d => d.id)
+            .attr('x', 0)
+            .attr('y', 30)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '10px')
+            .attr('fill', '#333');
+
+        // Добавление событий для узлов
+        node.on('click', handleNodeClick)
+            .on('mouseover', handleNodeMouseOver)
+            .on('mouseout', handleNodeMouseOut);
+
+        // Обновление позиций
+        simulation.on('tick', () => {
+            link
+                .attr('x1', d => d.source.x)
+                .attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x)
+                .attr('y2', d => d.target.y);
+
+            node
+                .attr('transform', d => `translate(${d.x},${d.y})`);
+        });
+
+        // Функции для drag
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Функция для получения цвета узла
+        function getNodeColor(type) {
+            const colors = {
+                'project': '#e1f5fe',
+                'tech_stack': '#f3e5f5',
+                'service': '#e8f5e8',
+                'domain_entity': '#fff3e0',
+                'frontend_component': '#fce4ec',
+                'ai_capability': '#e0f2f1',
+                'workflow': '#f3e5f5',
+                'testing': '#fff8e1',
+                'infrastructure': '#e8eaf6',
+                'deployment': '#e8eaf6'
+            };
+            return colors[type] || '#ccc';
+        }
+
+        // Обработчик клика по узлу
+        function handleNodeClick(event, d) {
+            // Скрыть загрузку
+            document.getElementById('loading').style.display = 'none';
+            
+            // Показать информацию о сущности
+            const entityInfo = document.getElementById('entity-info');
+            entityInfo.innerHTML = `
+                <h3>${d.id}</h3>
+                <span class="entity-type ${d.type}">${getTypeLabel(d.type)}</span>
+                <div class="observations">
+                    <h4>Наблюдения:</h4>
+                    <div class="observation">Тип: ${d.type}</div>
+                    <div class="observation">Группа: ${d.group}</div>
+                </div>
+                <div class="relations">
+                    <h4>Связи:</h4>
+                    ${getEntityRelations(d.id)}
+                </div>
+            `;
+        }
+
+        // Обработчик наведения на узел
+        function handleNodeMouseOver(event, d) {
+            // Подсветка связанных узлов
+            const connectedLinks = graphData.links.filter(l => 
+                l.source.id === d.id || l.target.id === d.id
+            );
+            
+            const connectedNodeIds = new Set();
+            connectedLinks.forEach(l => {
+                connectedNodeIds.add(l.source.id);
+                connectedNodeIds.add(l.target.id);
+            });
+
+            node.style('opacity', n => connectedNodeIds.has(n.id) ? 1 : 0.2);
+            link.style('opacity', l => 
+                connectedNodeIds.has(l.source.id) && connectedNodeIds.has(l.target.id) ? 1 : 0.1
+            );
+        }
+
+        // Обработчик ухода мыши с узла
+        function handleNodeMouseOut(event, d) {
+            node.style('opacity', 1);
+            link.style('opacity', 0.6);
+        }
+
+        // Функция для получения метки типа
+        function getTypeLabel(type) {
+            const labels = {
+                'project': 'Проект',
+                'tech_stack': 'Технологический стек',
+                'service': 'Сервис',
+                'domain_entity': 'Доменная сущность',
+                'frontend_component': 'Frontend компонент',
+                'ai_capability': 'AI возможность',
+                'workflow': 'Workflow процесс',
+                'testing': 'Тестирование',
+                'infrastructure': 'Инфраструктура',
+                'deployment': 'Развертывание'
+            };
+            return labels[type] || type;
+        }
+
+        // Функция для получения связей сущности
+        function getEntityRelations(entityId) {
+            const relations = graphData.links.filter(l => {
+                const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+                const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+                return sourceId === entityId || targetId === entityId;
+            });
+            
+            if (relations.length === 0) {
+                return '<p>Нет связей</p>';
+            }
+            
+            return relations.map(rel => {
+                const sourceId = typeof rel.source === 'object' ? rel.source.id : rel.source;
+                const targetId = typeof rel.target === 'object' ? rel.target.id : rel.target;
+                const isSource = sourceId === entityId;
+                const otherEntity = isSource ? targetId : sourceId;
+                const direction = isSource ? '→' : '←';
+                const relationText = isSource ? rel.type : `inverse_${rel.type}`;
+                
+                return `
+                    <div class="relation">
+                        <span class="relation-type">${relationText}</span>
+                        <span>${entityId} ${direction} ${otherEntity}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Обработчики кнопок управления
+        document.getElementById('reset-view').addEventListener('click', () => {
+            simulation.alpha(1).restart();
+        });
+
+        document.getElementById('center-graph').addEventListener('click', () => {
+            simulation.force('center', d3.forceCenter(width / 2, height / 2));
+            simulation.alpha(1).restart();
+        });
+
+        document.getElementById('toggle-labels').addEventListener('click', () => {
+            const labels = node.selectAll('text');
+            const isVisible = labels.style('display') !== 'none';
+            labels.style('display', isVisible ? 'none' : 'block');
+        });
+
+        document.getElementById('filter-type').addEventListener('change', (e) => {
+            const selectedType = e.target.value;
+            
+            node.style('display', d => 
+                selectedType === 'all' || d.type === selectedType ? 'block' : 'none'
+            );
+            
+            link.style('display', l => {
+                const sourceType = graphData.nodes.find(n => n.id === l.source.id)?.type;
+                const targetType = graphData.nodes.find(n => n.id === l.target.id)?.type;
+                
+                if (selectedType === 'all') return 'block';
+                if (sourceType === selectedType && targetType === selectedType) return 'block';
+                if (sourceType === selectedType || targetType === selectedType) return 'block';
+                return 'none';
+            });
+        });
+
+        document.getElementById('layout-type').addEventListener('change', (e) => {
+            const layoutType = e.target.value;
+            
+            // Сброс текущей симуляции
+            simulation.stop();
+            
+            // Настройка новой симуляции в зависимости от выбранного layout
+            switch(layoutType) {
+                case 'force':
+                    simulation
+                        .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(100))
+                        .force('charge', d3.forceManyBody().strength(-300))
+                        .force('center', d3.forceCenter(width / 2, height / 2))
+                        .force('collision', d3.forceCollide().radius(50));
+                    break;
+                    
+                case 'tree':
+                    // Для tree layout нужно перестроить узлы в иерархическую структуру
+                    // Пока используем force layout с другими параметрами
+                    simulation
+                        .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(150))
+                        .force('charge', d3.forceManyBody().strength(-500))
+                        .force('center', d3.forceCenter(width / 2, height / 2))
+                        .force('collision', d3.forceCollide().radius(60));
+                    break;
+                    
+                case 'radial':
+                    simulation
+                        .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(80))
+                        .force('charge', d3.forceManyBody().strength(-200))
+                        .force('center', d3.forceCenter(width / 2, height / 2))
+                        .force('collision', d3.forceCollide().radius(40))
+                        .force('radial', d3.forceRadial(200, width / 2, height / 2).strength(0.1));
+                    break;
+                    
+                case 'cluster':
+                    simulation
+                        .force('link', d3.forceLink(graphData.links).id(d => d.id).distance(120))
+                        .force('charge', d3.forceManyBody().strength(-400))
+                        .force('center', d3.forceCenter(width / 2, height / 2))
+                        .force('collision', d3.forceCollide().radius(70))
+                        .force('x', d3.forceX().strength(0.1))
+                        .force('y', d3.forceY().strength(0.1));
+                    break;
+            }
+            
+            // Перезапуск симуляции
+            simulation.alpha(1).restart();
+        });
+
+        // Скрыть загрузку после инициализации
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+        }, 1000);
+    </script>
+</body>
+</html>

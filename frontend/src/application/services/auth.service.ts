@@ -11,8 +11,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  confirmPassword: string;
 }
 
 export interface AuthResponse {
@@ -65,6 +64,7 @@ export class AuthService {
 
   login(credentials: LoginRequest): Observable<ApiResponse<AuthResponse>> {
     return this.apiClient.post<AuthResponse>('/auth/login', credentials).pipe(
+      map(response => response.data),
       tap(response => {
         this.handleAuthResponse(response.data);
       }),
@@ -77,6 +77,7 @@ export class AuthService {
 
   register(userData: RegisterRequest): Observable<ApiResponse<AuthResponse>> {
     return this.apiClient.post<AuthResponse>('/auth/register', userData).pipe(
+      map(response => response.data),
       tap(response => {
         this.handleAuthResponse(response.data);
       }),
@@ -102,6 +103,7 @@ export class AuthService {
     }
 
     return this.apiClient.post<AuthResponse>('/auth/refresh', { refreshToken }).pipe(
+      map(response => response.data),
       tap(response => {
         this.handleAuthResponse(response.data);
       }),
@@ -114,14 +116,18 @@ export class AuthService {
   }
 
   forgotPassword(email: string): Observable<ApiResponse<{ success: boolean; message: string }>> {
-    return this.apiClient.post<{ success: boolean; message: string }>('/auth/forgot-password', { email });
+    return this.apiClient.post<{ success: boolean; message: string }>('/auth/forgot-password', { email }).pipe(
+      map(response => response.data)
+    );
   }
 
   resetPassword(token: string, newPassword: string): Observable<ApiResponse<{ success: boolean; message: string }>> {
     return this.apiClient.post<{ success: boolean; message: string }>('/auth/reset-password', {
       token,
       newPassword
-    });
+    }).pipe(
+      map(response => response.data)
+    );
   }
 
   getCurrentUser(): User | null {
@@ -175,7 +181,7 @@ export class AuthService {
 
   updateUserProfile(userData: Partial<User>): Observable<ApiResponse<User>> {
     return this.apiClient.put<User>('/auth/profile', userData).pipe(
-      tap(response => {
+      map(response => response.data),
         this.setUser(response.data);
         this.currentUserSubject.next(response.data);
       })
@@ -186,6 +192,8 @@ export class AuthService {
     return this.apiClient.post<{ success: boolean; message: string }>('/auth/change-password', {
       currentPassword,
       newPassword
-    });
+    }).pipe(
+      map(response => response.data)
+    );
   }
 }

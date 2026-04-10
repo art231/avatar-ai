@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Output, Input, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -32,7 +32,7 @@ import { FormsModule } from '@angular/forms';
           accept="audio/wav,audio/mpeg,audio/flac,audio/x-wav" 
           hidden
         />
-        <button type="button" class="btn btn-primary" (click)="fileInput.click()">
+        <button type="button" class="btn btn-primary" (click)="triggerFileInput()">
           Выбрать файл
         </button>
       </div>
@@ -394,6 +394,8 @@ export class AudioUploadComponent implements OnInit {
   @Input() showValidation: boolean = false;
   @Output() audioChange = new EventEmitter<File | null>();
 
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
   audioFile: File | null = null;
   audioUrl: string | null = null;
   audioElement: HTMLAudioElement | null = null;
@@ -445,6 +447,12 @@ export class AudioUploadComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.processFile(input.files[0]);
+    }
+  }
+
+  triggerFileInput() {
+    if (this.fileInput) {
+      this.fileInput.nativeElement.click();
     }
   }
 

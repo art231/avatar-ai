@@ -1,14 +1,18 @@
 using System.Text;
 using AvatarAI.Api.Filters;
+using AvatarAI.Application.Commands;
+using AvatarAI.Application.Handlers;
 using AvatarAI.Application.Interfaces;
 using AvatarAI.Application.Services;
 using AvatarAI.Domain.Interfaces;
 using AvatarAI.Infrastructure.Persistence;
 using AvatarAI.Infrastructure.Persistence.Repositories;
 using AvatarAI.Infrastructure.Services;
+using AutoMapper;
 using Hangfire;
 using Hangfire.Dashboard;
 using Hangfire.PostgreSql;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -131,7 +135,17 @@ builder.Services.AddScoped<IBackgroundJobService, BackgroundJobService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 
 // Add MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediatR(cfg => 
+{
+    cfg.RegisterServicesFromAssemblies(
+        typeof(Program).Assembly,
+        typeof(RegisterCommand).Assembly,
+        typeof(RegisterCommandHandler).Assembly
+    );
+});
+
+// Add AutoMapper
+builder.Services.AddAutoMapper(typeof(AvatarAI.Application.Mapping.MappingProfile));
 
 // Add HTTP client for AI services
 builder.Services.AddHttpClient<IAIServiceClient, AIServiceClient>(client =>

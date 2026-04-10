@@ -130,7 +130,7 @@ export class GenerationTaskService {
         startWith(0),
         switchMap(() => this.getTask(id).pipe(
           map(response => response.data),
-          catchError(() => of(null))
+          catchError(() => of({} as GenerationTask))
         )),
         distinctUntilChanged((prev, curr) => 
           prev?.status === curr?.status && prev?.progress === curr?.progress

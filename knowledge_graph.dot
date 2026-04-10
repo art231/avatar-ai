@@ -1,0 +1,302 @@
+digraph AvatarAI_KnowledgeGraph {
+    rankdir=TB;
+    compound=true;
+    fontname="Helvetica";
+    node [fontname="Helvetica", style=filled, fillcolor=lightblue];
+    edge [fontname="Helvetica", fontsize=10];
+    
+    // Основные стили
+    node [shape=box];
+    
+    // Проект
+    subgraph cluster_project {
+        label="Проект Avatar AI";
+        style=filled;
+        fillcolor=lightblue;
+        
+        Project [label="Project: Avatar AI", shape=ellipse, fillcolor=lightblue];
+    }
+    
+    // Технологический стек
+    subgraph cluster_tech_stack {
+        label="Технологический стек";
+        style=filled;
+        fillcolor=lightyellow;
+        
+        TechFrontend [label="TechStack: Frontend\nAngular, TypeScript, Vite, RxJS"];
+        TechBackend [label="TechStack: Backend\n.NET 8, EF Core, PostgreSQL"];
+        TechAI [label="TechStack: AI Services\nPython, XTTS, LipSync, LoRA"];
+        Architecture [label="Architecture: Clean Architecture\nSOLID, CQRS, DI"];
+    }
+    
+    // Сервисы
+    subgraph cluster_services {
+        label="Сервисы";
+        style=filled;
+        fillcolor=lightgreen;
+        
+        // Базовые сервисы
+        PostgreSQL [label="Service: PostgreSQL\nБаза данных"];
+        Redis [label="Service: Redis\nКэш и очереди"];
+        BackendAPI [label="Service: Backend API\n.NET 8 Web API"];
+        Frontend [label="Service: Frontend\nAngular 17 приложение"];
+        
+        // AI сервисы
+        subgraph cluster_ai_services {
+            label="AI Сервисы";
+            style=filled;
+            fillcolor=pink;
+            
+            AudioPreprocessor [label="Service: Audio Preprocessor\nОбработка аудио"];
+            XTTSService [label="Service: XTTS Service\nСинтез речи"];
+            MediaAnalyzer [label="Service: Media Analyzer\nАнализ медиа"];
+            LipsyncService [label="Service: Lipsync Service\nСинхронизация губ"];
+            LoRATrainer [label="Service: LoRA Trainer\nОбучение моделей"];
+            MotionGenerator [label="Service: Motion Generator\nГенерация движений"];
+            VideoRenderer [label="Service: Video Renderer\nРендеринг видео"];
+            TrainingPipeline [label="Service: Training Pipeline\nОркестрация обучения"];
+        }
+    }
+    
+    // Доменные сущности
+    subgraph cluster_domain {
+        label="Доменные сущности";
+        style=filled;
+        fillcolor=orange;
+        
+        User [label="Domain Entity: User\nПользователь системы"];
+        Avatar [label="Domain Entity: Avatar\nAI аватар"];
+        GenerationTask [label="Domain Entity: GenerationTask\nЗадача генерации"];
+        TaskLog [label="Domain Entity: TaskLog\nЛог выполнения"];
+    }
+    
+    // Frontend компоненты
+    subgraph cluster_frontend {
+        label="Frontend компоненты";
+        style=filled;
+        fillcolor=lightpink;
+        
+        Home [label="Component: Home\nГлавная страница"];
+        Dashboard [label="Component: Dashboard\nЛичный кабинет"];
+        Avatars [label="Component: Avatars\nСписок аватаров"];
+        AvatarDetail [label="Component: AvatarDetail\nДетали аватара"];
+        Training [label="Component: Training\nОбучение аватаров"];
+        Generation [label="Component: Generation\nГенерация видео"];
+        Login [label="Component: Login\nВход в систему"];
+        Register [label="Component: Register\nРегистрация"];
+        ForgotPassword [label="Component: ForgotPassword\nВосстановление пароля"];
+        TaskList [label="Component: TaskList\nСписок задач"];
+        TaskDetail [label="Component: TaskDetail\nДетали задачи"];
+    }
+    
+    // AI возможности
+    subgraph cluster_ai_capabilities {
+        label="AI возможности";
+        style=filled;
+        fillcolor=lightcyan;
+        
+        TTS [label="AI Capability: Text-to-Speech\nСинтез речи"];
+        LipSync [label="AI Capability: Lip Sync\nСинхронизация губ"];
+        LoRATraining [label="AI Capability: LoRA Training\nОбучение моделей"];
+        MotionGeneration [label="AI Capability: Motion Generation\nГенерация движений"];
+        VideoRendering [label="AI Capability: Video Rendering\nРендеринг видео"];
+        MediaAnalysis [label="AI Capability: Media Analysis\nАнализ медиа"];
+        AudioProcessing [label="AI Capability: Audio Processing\nОбработка аудио"];
+    }
+    
+    // Workflow процессы
+    subgraph cluster_workflows {
+        label="Workflow процессы";
+        style=filled;
+        fillcolor=lavender;
+        
+        AvatarTraining [label="Workflow: Avatar Training\nОбучение аватара"];
+        VideoGeneration [label="Workflow: Video Generation\nГенерация видео"];
+        DataProcessing [label="Workflow: Data Processing\nОбработка данных"];
+    }
+    
+    // Тестирование
+    subgraph cluster_testing {
+        label="Тестирование";
+        style=filled;
+        fillcolor=wheat;
+        
+        UnitTests [label="Testing: Unit Tests\nUnit тесты backend"];
+        IntegrationTests [label="Testing: Integration Tests\nIntegration тесты"];
+        FrontendTests [label="Testing: Frontend Tests\nТесты frontend"];
+    }
+    
+    // Инфраструктура
+    subgraph cluster_infrastructure {
+        label="Инфраструктура";
+        style=filled;
+        fillcolor=lightgray;
+        
+        Docker [label="Infrastructure: Docker\nКонтейнеризация"];
+        Kubernetes [label="Infrastructure: Kubernetes\nОркестрация"];
+        Production [label="Deployment: Production\nПродакшен развертывание"];
+        Development [label="Deployment: Development\nРазработка"];
+    }
+    
+    // Связи проекта с технологиями
+    Project -> TechFrontend [label="uses"];
+    Project -> TechBackend [label="uses"];
+    Project -> TechAI [label="uses"];
+    Project -> Architecture [label="implements"];
+    
+    // Связи проекта с сервисами
+    Project -> PostgreSQL [label="uses"];
+    Project -> Redis [label="uses"];
+    Project -> BackendAPI [label="uses"];
+    Project -> Frontend [label="uses"];
+    Project -> AudioPreprocessor [label="uses"];
+    Project -> XTTSService [label="uses"];
+    Project -> MediaAnalyzer [label="uses"];
+    Project -> LipsyncService [label="uses"];
+    Project -> LoRATrainer [label="uses"];
+    Project -> MotionGenerator [label="uses"];
+    Project -> VideoRenderer [label="uses"];
+    Project -> TrainingPipeline [label="uses"];
+    
+    // Зависимости между сервисами
+    BackendAPI -> PostgreSQL [label="depends_on"];
+    BackendAPI -> Redis [label="depends_on"];
+    Frontend -> BackendAPI [label="depends_on"];
+    TrainingPipeline -> AudioPreprocessor [label="depends_on"];
+    TrainingPipeline -> MediaAnalyzer [label="depends_on"];
+    TrainingPipeline -> XTTSService [label="depends_on"];
+    TrainingPipeline -> LoRATrainer [label="depends_on"];
+    TrainingPipeline -> LipsyncService [label="depends_on"];
+    VideoRenderer -> LoRATrainer [label="depends_on"];
+    VideoRenderer -> Redis [label="depends_on"];
+    
+    // Доменные сущности
+    BackendAPI -> User [label="manages"];
+    BackendAPI -> Avatar [label="manages"];
+    BackendAPI -> GenerationTask [label="manages"];
+    BackendAPI -> TaskLog [label="manages"];
+    
+    Avatar -> User [label="belongs_to"];
+    GenerationTask -> Avatar [label="belongs_to"];
+    TaskLog -> GenerationTask [label="belongs_to"];
+    
+    PostgreSQL -> User [label="stores"];
+    PostgreSQL -> Avatar [label="stores"];
+    PostgreSQL -> GenerationTask [label="stores"];
+    PostgreSQL -> TaskLog [label="stores"];
+    
+    // Frontend компоненты
+    Frontend -> Home [label="contains"];
+    Frontend -> Dashboard [label="contains"];
+    Frontend -> Avatars [label="contains"];
+    Frontend -> AvatarDetail [label="contains"];
+    Frontend -> Training [label="contains"];
+    Frontend -> Generation [label="contains"];
+    Frontend -> Login [label="contains"];
+    Frontend -> Register [label="contains"];
+    Frontend -> ForgotPassword [label="contains"];
+    Frontend -> TaskList [label="contains"];
+    Frontend -> TaskDetail [label="contains"];
+    
+    Avatars -> Avatar [label="displays"];
+    AvatarDetail -> Avatar [label="displays"];
+    Generation -> GenerationTask [label="creates"];
+    TaskList -> GenerationTask [label="displays"];
+    TaskDetail -> GenerationTask [label="displays"];
+    TaskDetail -> TaskLog [label="displays"];
+    
+    // AI возможности
+    XTTSService -> TTS [label="provides"];
+    LipsyncService -> LipSync [label="provides"];
+    LoRATrainer -> LoRATraining [label="provides"];
+    MotionGenerator -> MotionGeneration [label="provides"];
+    VideoRenderer -> VideoRendering [label="provides"];
+    MediaAnalyzer -> MediaAnalysis [label="provides"];
+    AudioPreprocessor -> AudioProcessing [label="provides"];
+    
+    TrainingPipeline -> LoRATraining [label="orchestrates"];
+    TrainingPipeline -> TTS [label="orchestrates"];
+    TrainingPipeline -> LipSync [label="orchestrates"];
+    TrainingPipeline -> AudioProcessing [label="orchestrates"];
+    TrainingPipeline -> MediaAnalysis [label="orchestrates"];
+    
+    // Workflow процессы
+    Project -> AvatarTraining [label="implements"];
+    Project -> VideoGeneration [label="implements"];
+    Project -> DataProcessing [label="implements"];
+    
+    AvatarTraining -> TrainingPipeline [label="executed_by"];
+    VideoGeneration -> BackendAPI [label="orchestrated_by"];
+    DataProcessing -> AudioPreprocessor [label="uses"];
+    DataProcessing -> MediaAnalyzer [label="uses"];
+    
+    AvatarTraining -> LoRATraining [label="requires"];
+    AvatarTraining -> TTS [label="requires"];
+    AvatarTraining -> AudioProcessing [label="requires"];
+    AvatarTraining -> MediaAnalysis [label="requires"];
+    
+    VideoGeneration -> TTS [label="requires"];
+    VideoGeneration -> LipSync [label="requires"];
+    VideoGeneration -> MotionGeneration [label="requires"];
+    VideoGeneration -> VideoRendering [label="requires"];
+    
+    // Тестирование
+    Project -> UnitTests [label="includes"];
+    Project -> IntegrationTests [label="includes"];
+    Project -> FrontendTests [label="includes"];
+    
+    UnitTests -> BackendAPI [label="tests"];
+    IntegrationTests -> PostgreSQL [label="tests"];
+    IntegrationTests -> BackendAPI [label="tests"];
+    FrontendTests -> Frontend [label="tests"];
+    
+    // Инфраструктура
+    Project -> Docker [label="uses"];
+    Project -> Kubernetes [label="supports"];
+    Project -> Production [label="supports"];
+    Project -> Development [label="supports"];
+    
+    Docker -> PostgreSQL [label="containerizes"];
+    Docker -> Redis [label="containerizes"];
+    Docker -> BackendAPI [label="containerizes"];
+    Docker -> Frontend [label="containerizes"];
+    Docker -> XTTSService [label="containerizes"];
+    Docker -> LipsyncService [label="containerizes"];
+    Docker -> LoRATrainer [label="containerizes"];
+    Docker -> VideoRenderer [label="containerizes"];
+    
+    // Настройка отображения
+    {
+        rank=same; Project; TechFrontend; TechBackend; TechAI; Architecture;
+    }
+    
+    {
+        rank=same; PostgreSQL; Redis; BackendAPI; Frontend;
+    }
+    
+    {
+        rank=same; User; Avatar; GenerationTask; TaskLog;
+    }
+    
+    // Легенда
+    subgraph cluster_legend {
+        label="Легенда";
+        style=filled;
+        fillcolor=white;
+        
+        node [shape=plaintext, fillcolor=white];
+        
+        edge [style=invis];
+        
+        Legend1 [label="Типы связей:"];
+        Legend2 [label="• uses - использует"];
+        Legend3 [label="• depends_on - зависит от"];
+        Legend4 [label="• contains - содержит"];
+        Legend5 [label="• provides - предоставляет"];
+        Legend6 [label="• implements - реализует"];
+        Legend7 [label="• tests - тестирует"];
+        Legend8 [label="• containerizes - контейнеризует"];
+        
+        Legend1 -> Legend2 -> Legend3 -> Legend4 -> Legend5 -> Legend6 -> Legend7 -> Legend8 [style=invis];
+    }
+}

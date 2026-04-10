@@ -30,9 +30,8 @@
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.json",
             "assets": [
-              "src/favicon.ico"
+            "styles": ["src/styles/global.css"],
             ],
-            "styles": [],
             "scripts": []
           },
           "configurations": {
@@ -52,6 +51,18 @@
               "outputHashing": "all"
             },
             "development": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "2.5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "5kb",
+                  "maximumError": "8kb"
+                }
+              ],
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
@@ -63,10 +74,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "avatar-ai-frontend:build:production"
+              "buildTarget": "avatar-ai-frontend:build:production"
             },
             "development": {
-              "browserTarget": "avatar-ai-frontend:build:development"
+              "buildTarget": "avatar-ai-frontend:build:development"
             }
           },
           "defaultConfiguration": "development"

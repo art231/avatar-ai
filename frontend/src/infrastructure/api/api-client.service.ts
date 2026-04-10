@@ -15,7 +15,7 @@ export interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class ApiClientService {
-  private baseUrl = '/api';
+  private baseUrl = 'http://localhost:5000/api';
   private isBrowser: boolean;
 
   constructor(

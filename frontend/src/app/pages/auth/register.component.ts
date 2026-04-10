@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { AuthService, RegisterRequest } from '../../../application/services/auth.service';
 
 @Component({
@@ -26,42 +25,6 @@ import { AuthService, RegisterRequest } from '../../../application/services/auth
         
         <form class="mt-8 space-y-6" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
           <div class="rounded-md shadow-sm space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label for="firstName" class="sr-only">Имя</label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  formControlName="firstName"
-                  required
-                  class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Имя"
-                  [class.border-red-300]="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched"
-                >
-                <div *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched" class="text-red-500 text-xs mt-1">
-                  <span *ngIf="registerForm.get('firstName')?.errors?.['required']">Имя обязательно</span>
-                </div>
-              </div>
-              
-              <div>
-                <label for="lastName" class="sr-only">Фамилия</label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  formControlName="lastName"
-                  required
-                  class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                  placeholder="Фамилия"
-                  [class.border-red-300]="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched"
-                >
-                <div *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched" class="text-red-500 text-xs mt-1">
-                  <span *ngIf="registerForm.get('lastName')?.errors?.['required']">Фамилия обязательна</span>
-                </div>
-              </div>
-            </div>
-            
             <div>
               <label for="email" class="sr-only">Email</label>
               <input
@@ -191,10 +154,8 @@ export class RegisterComponent implements OnInit {
     private router: Router
   ) {
     this.registerForm = this.formBuilder.group({
-      firstName: ['', [Validators.required]],
-      lastName: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', [Validators.required]],
       terms: [false, [Validators.requiredTrue]]
     }, {
@@ -219,10 +180,9 @@ export class RegisterComponent implements OnInit {
     this.errorMessage = '';
 
     const userData: RegisterRequest = {
-      firstName: this.registerForm.value.firstName,
-      lastName: this.registerForm.value.lastName,
       email: this.registerForm.value.email,
-      password: this.registerForm.value.password
+      password: this.registerForm.value.password,
+      confirmPassword: this.registerForm.value.confirmPassword
     };
 
     this.authService.register(userData).subscribe({

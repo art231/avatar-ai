@@ -216,78 +216,25 @@ import { of } from 'rxjs';
     .avatar-detail-container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem 1rem;
+      padding: var(--spacing-xl) var(--spacing-md);
     }
 
     .back-button {
-      margin-bottom: 2rem;
-    }
-
-    .loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem;
-      text-align: center;
-    }
-
-    .loading-spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #0d6efd;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 1rem;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .error-container {
-      margin: 2rem 0;
-    }
-
-    .alert {
-      display: flex;
-      align-items: flex-start;
-      gap: 1rem;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1rem;
-    }
-
-    .alert-error {
-      background-color: #fee;
-      border: 1px solid #fcc;
-      color: #c00;
-    }
-
-    .not-found {
-      text-align: center;
-      padding: 4rem 2rem;
-    }
-
-    .not-found-icon {
-      color: #6c757d;
-      margin-bottom: 1.5rem;
+      margin-bottom: var(--spacing-xl);
     }
 
     .avatar-header {
       display: grid;
       grid-template-columns: auto 1fr;
-      gap: 3rem;
-      margin-bottom: 3rem;
+      gap: var(--spacing-2xl);
+      margin-bottom: var(--spacing-2xl);
       align-items: start;
     }
 
     @media (max-width: 768px) {
       .avatar-header {
         grid-template-columns: 1fr;
-        gap: 2rem;
+        gap: var(--spacing-xl);
       }
     }
 
@@ -298,8 +245,8 @@ import { of } from 'rxjs';
     .avatar-image-large {
       width: 200px;
       height: 200px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 16px;
+      background: var(--gradient-primary);
+      border-radius: var(--radius-xl);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -318,12 +265,12 @@ import { of } from 'rxjs';
 
     .avatar-status-large {
       position: absolute;
-      top: 1rem;
+      top: var(--spacing-md);
       right: -0.5rem;
-      padding: 0.5rem 1rem;
+      padding: var(--spacing-sm) var(--spacing-md);
       border-radius: 20px;
-      font-size: 0.875rem;
-      font-weight: 600;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
     }
 
     .status-training {
@@ -348,53 +295,53 @@ import { of } from 'rxjs';
     }
 
     .avatar-title-section {
-      margin-bottom: 2rem;
+      margin-bottom: var(--spacing-xl);
     }
 
     .avatar-name {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      color: #1f2937;
+      font-size: var(--font-size-4xl);
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--spacing-sm);
+      color: var(--color-text-primary);
     }
 
     .avatar-description {
-      font-size: 1.125rem;
-      color: #6b7280;
+      font-size: var(--font-size-lg);
+      color: var(--color-text-secondary);
       line-height: 1.6;
     }
 
     .avatar-actions-header {
       display: flex;
-      gap: 1rem;
+      gap: var(--spacing-md);
       flex-wrap: wrap;
     }
 
     .avatar-stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1.5rem;
-      margin-bottom: 3rem;
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
     }
 
     .stat-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 1.5rem;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
       display: flex;
       align-items: flex-start;
-      gap: 1rem;
+      gap: var(--spacing-md);
       transition: transform 0.2s, box-shadow 0.2s;
     }
 
     .stat-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-lg);
     }
 
     .stat-icon {
-      color: #0d6efd;
+      color: var(--color-primary);
       flex-shrink: 0;
     }
 
@@ -403,147 +350,83 @@ import { of } from 'rxjs';
     }
 
     .stat-title {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #6b7280;
-      margin-bottom: 0.25rem;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-secondary);
+      margin-bottom: var(--spacing-xs);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
 
     .stat-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 0.25rem;
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-text-primary);
+      margin-bottom: var(--spacing-xs);
     }
 
     .stat-description {
-      font-size: 0.875rem;
-      color: #6b7280;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
     }
 
     .training-progress {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-bottom: 3rem;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
     }
 
     .progress-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
+      margin-bottom: var(--spacing-md);
     }
 
     .progress-header h3 {
       margin: 0;
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: #1f2937;
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
     }
 
     .progress-percentage {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #0d6efd;
-    }
-
-    .progress-bar {
-      height: 8px;
-      background: #e5e7eb;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-bottom: 0.5rem;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #0d6efd, #0b5ed7);
-      border-radius: 4px;
-      transition: width 0.3s ease;
+      font-size: var(--font-size-xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-primary);
     }
 
     .progress-description {
-      font-size: 0.875rem;
-      color: #6b7280;
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
       margin: 0;
     }
 
     .action-section {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 2rem;
+      background: var(--color-bg-primary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
     }
 
     .action-section h2 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 1.5rem;
-      color: #1f2937;
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-semibold);
+      margin-bottom: var(--spacing-lg);
+      color: var(--color-text-primary);
     }
 
     .action-buttons {
       display: flex;
-      gap: 1rem;
+      gap: var(--spacing-md);
       flex-wrap: wrap;
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s;
-    }
-
-    .btn-primary {
-      background: #0d6efd;
-      color: white;
-    }
-
-    .btn-primary:hover {
-      background: #0b5ed7;
-    }
-
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
-    }
-
-    .btn-secondary:hover {
-      background: #5c636a;
-    }
-
-    .btn-danger {
-      background: #dc3545;
-      color: white;
-    }
-
-    .btn-danger:hover {
-      background: #bb2d3b;
-    }
-
-    .btn-large {
-      padding: 1rem 2rem;
-      font-size: 1.125rem;
-    }
-
-    .btn-sm {
-      padding: 0.5rem 1rem;
-      font-size: 0.875rem;
     }
 
     @media (max-width: 768px) {
       .avatar-name {
-        font-size: 2rem;
+        font-size: var(--font-size-3xl);
       }
       
       .avatar-stats-grid {
@@ -552,11 +435,6 @@ import { of } from 'rxjs';
       
       .action-buttons {
         flex-direction: column;
-      }
-      
-      .btn-large {
-        width: 100%;
-        justify-content: center;
       }
     }
   `]

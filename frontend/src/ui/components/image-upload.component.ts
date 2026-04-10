@@ -343,6 +343,12 @@ export class ImageUploadComponent implements OnInit {
     }
   }
 
+  triggerFileInput() {
+    if (this.fileInput) {
+      this.fileInput.nativeElement.click();
+    }
+  }
+
   private processFiles(fileList: File[]) {
     const imageFiles = fileList.filter(file => 
       file.type.startsWith('image/') && 
